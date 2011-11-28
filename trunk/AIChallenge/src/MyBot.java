@@ -3,6 +3,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
@@ -13,22 +14,11 @@ import java.util.TreeSet;
 public class MyBot extends Bot 
 {
 	// Gereserveerde Locaties
-	HashMap<Tile,Tile> reservedTiles = new HashMap<Tile,Tile>();
-	
-    /**
-     * Main method executed by the game engine for starting the bot.
-     * 
-     * @param args command line arguments
-     * 
-     * @throws IOException if an I/O error occurs
-     */
-    public static void main(String[] args) throws IOException 
-    {
-        new MyBot().readSystemInput();
-    }
+	private HashMap<Tile,Tile> reservedTiles = new HashMap<Tile,Tile>();
+	private Set<Tile> unseenTiles;
     
     /**
-     *   Functie die iedere ronde wordt uitgevoerd
+     * Functie die iedere ronde wordt uitgevoerd
      */
     @Override
     public void doTurn() 
@@ -36,7 +26,10 @@ public class MyBot extends Bot
     	/** - Initialisatie - */
     	
     	// Haal de gamestatus op
-        Ants gameState  = getAnts();	
+        Ants gameState = getAnts();	
+        
+        // Update de te verkennen map
+        updateMap(gameState);
         
         // Wis alle orders/gereserveerde locaties
         reservedTiles.clear();
@@ -56,9 +49,10 @@ public class MyBot extends Bot
         Set<Tile> orderedAnts = new HashSet<Tile>();
         
         // Zoek naar eten
-        searchForFood(gameState,availableAnts,orderedAnts);  
+        searchAndOrder(gameState, gameState.getFoodTiles(), availableAnts, orderedAnts);  
         
         // Verken de map
+        searchAndOrder(gameState, unseenTiles, availableAnts, orderedAnts); 
         
         // Verdedig eigen mierenhopen
         
@@ -70,13 +64,37 @@ public class MyBot extends Bot
         teamUp(gameState,orderedAnts); 
     }
     
+    private void updateMap(Ants gameState)
+    {
+    	// Als we in de eerste ronde zitten, voeg dan alle locaties toe aan de te verkennen map
+        if (unseenTiles == null) 
+		{
+            unseenTiles = new HashSet<Tile>();
+			
+            for (int row = 0; row < gameState.getRows(); row++)
+                for (int col = 0; col < gameState.getCols(); col++)
+                    unseenTiles.add(new Tile(row, col));
+        }
+        
+        Iterator<Tile> locIter = unseenTiles.iterator();
+		
+        // Verwijder alle zichtbare locaties van de te verkennen map
+        while (locIter.hasNext()) 
+		{
+            Tile next = locIter.next();
+            
+			if (gameState.isVisible(next))
+                locIter.remove();
+        }
+    }
+    
     private void teamUp(Ants gameState, Set<Tile> orderedAnts) 
-    {    	
+    {
     	// Lijst van gevonden routes
         List<Route> teamupRoutes = new ArrayList<Route>(); 
         
         // Mieren die al als doel worden gebruikt
-    	HashMap<Tile,Tile> teamTargets   = new HashMap<Tile,Tile>();
+    	HashMap<Tile,Tile> teamTargets = new HashMap<Tile,Tile>();
         
         /** - Zoeken naar teamgenoten - */ 
         
@@ -99,56 +117,63 @@ public class MyBot extends Bot
         // Deel aan de hand van de gevonden routes orders uit
         for (Route route : teamupRoutes) 
         {
-            if (gameState.getMyAnts().contains(route.getStart()))    // Als de mier nog geen doel heeft
+            if (gameState.getMyAnts().contains(route.getStart()))	// Als de mier nog geen doel heeft
             {
             	// Probeer de zet
                 doMoveLocation(gameState, route.getStart(),route.getEnd());
             }
         }		
 	}
-
-	private void searchForFood(Ants gameState,Set<Tile> availableAnts, Set<Tile> orderedAnts) 
-    {    	
-    	// Eten dat al als doel wordt gebruikt
-    	HashMap<Tile,Tile> foodTargets   = new HashMap<Tile,Tile>();
+    
+    /**
+     * Functie die gegeven een lijst van Targets en van Ants routes zoekt en orders uitdeelt
+     * @param gameState
+     * @param availableAnts
+     * @param orderedAnts
+     * @param targets
+     */
+    private void searchAndOrder(Ants gameState, Set<Tile> targets, Set<Tile> availableAnts, Set<Tile> orderedAnts) 
+    {
+    	// Targets die al als doel worden gebruikt
+    	HashMap<Tile,Tile> foodTargets = new HashMap<Tile,Tile>();
     	
     	 // Lijst van gevonden routes
-        List<Route> foodRoutes = new ArrayList<Route>();
+        List<Route> routes = new ArrayList<Route>();
         
-        // Lijst van zichbaar voedsel
-        TreeSet<Tile> sortedFood = new TreeSet<Tile>(gameState.getFoodTiles());
+        // Lijst van alle targets
+        TreeSet<Tile> sortedTargets = new TreeSet<Tile>(targets);
         
-        // Lijst van alle mieren
+        // Lijst van alle beschikbare mieren
         TreeSet<Tile> sortedAnts = new TreeSet<Tile>(availableAnts);
         
-        /** - Zoeken naar eten - */ 
+        /** - Zoek routes - */ 
         
-        // Vind alle routes tussen mieren en eten
-        for (Tile foodLoc : sortedFood) 
+        // Vind alle routes tussen mieren en targets
+        for (Tile foodLoc : sortedTargets) 
         {
             for (Tile antLoc : sortedAnts) 
             {
                 int distance = gameState.getDistance(antLoc, foodLoc);
                 Route route = new Route(antLoc, foodLoc, distance);
-                foodRoutes.add(route);
+                routes.add(route);
             }
         }
         
         // Sorteer de gevonden routes van kort naar lang
-        Collections.sort(foodRoutes);
+        Collections.sort(routes);
         
         /** - Deel orders uit - */  
         
         // Deel aan de hand van de gevonden routes orders uit
-        for (Route route : foodRoutes) 
+        for (Route route : routes) 
         {
-            if (   !foodTargets.containsKey(route.getEnd())         // Als eten nog niet getarget is
+            if (   !foodTargets.containsKey(route.getEnd())         // Als target nog niet getarget is
                 && !foodTargets.containsValue(route.getStart()))    // Als de mier nog geen doel heeft
             {
             	// Als de zet mogelijk is
                 if(doMoveLocation(gameState, route.getStart(),route.getEnd()))
                 {
-                	// Maak de connectie tussen de mier en het eten
+                	// Maak de connectie tussen de mier en de target
                 	foodTargets.put(route.getEnd(), route.getStart());
                 	
                 	// Deze mier heeft nu een order
@@ -205,4 +230,14 @@ public class MyBot extends Bot
 		
 		return false;
 	}
+	
+	/**
+     * Main method executed by the game engine for starting the bot.
+     * @param args command line arguments
+     * @throws IOException if an I/O error occurs
+     */
+    public static void main(String[] args) throws IOException 
+    {
+        new MyBot().readSystemInput();
+    }
 }
