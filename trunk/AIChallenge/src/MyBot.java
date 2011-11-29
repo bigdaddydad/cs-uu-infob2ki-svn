@@ -48,23 +48,55 @@ public class MyBot extends Bot
         // De mieren met al een order
         Set<Tile> orderedAnts = new HashSet<Tile>();
         
+        // Maak teams
+        Set<Team> teams = createTeams(gameState.getMyAnts(),2);
+        
         // Zoek naar eten
-        searchAndOrder(gameState, gameState.getFoodTiles(), availableAnts, orderedAnts);  
-        
-        // Verken de map
-        searchAndOrder(gameState, unseenTiles, availableAnts, orderedAnts); 
-        
-        // Verdedig eigen mierenhopen
-        
-        // Val vijandelijke mieren aan
-        
-        // Val vijandelijke mierenhopen aan
-        
-        // Vorm teams
-        teamUp(gameState,orderedAnts); 
+	    searchAndOrder(gameState, gameState.getFoodTiles(), availableAnts, orderedAnts,2);  
+    
+	    // Verken de map
+	    searchAndOrder(gameState, unseenTiles, availableAnts, orderedAnts,2); 
+   
+	    // Verdedig eigen mierenhopen
+	    searchAndOrder(gameState, gameState.getMyHills(), availableAnts, orderedAnts,2);
+	       
+	    // Val vijandelijke mieren aan
+	    searchAndOrder(gameState, gameState.getEnemyAnts(), availableAnts, orderedAnts,2);          
+	    
+	    // Val vijandelijke mierenhopen aan
+	    searchAndOrder(gameState, gameState.getEnemyHills(), availableAnts, orderedAnts,2);
+
     }
     
-    private void updateMap(Ants gameState)
+    private Set<Team> createTeams(Set<Tile> myAnts, int teamSize) 
+    {
+		Set<Team> teams = new HashSet<Team>();
+		
+		int counter = 0;
+		Team currentTeam = new Team();
+		
+		for(Tile ant : myAnts)
+		{
+			if(counter == 0 || counter == teamSize)
+			{
+				currentTeam = new Team();
+				currentTeam.addMember(ant);
+				counter++;
+			}
+			else
+			{
+				currentTeam.addMember(ant);
+				counter++;
+				
+				if(counter == teamSize)
+					counter = 0;
+			}
+		}
+		
+		return teams;
+	}
+
+	private void updateMap(Ants gameState)
     {
     	// Als we in de eerste ronde zitten, voeg dan alle locaties toe aan de te verkennen map
         if (unseenTiles == null) 
@@ -88,43 +120,6 @@ public class MyBot extends Bot
         }
     }
     
-    private void teamUp(Ants gameState, Set<Tile> orderedAnts) 
-    {
-    	// Lijst van gevonden routes
-        List<Route> teamupRoutes = new ArrayList<Route>(); 
-        
-        // Mieren die al als doel worden gebruikt
-    	HashMap<Tile,Tile> teamTargets = new HashMap<Tile,Tile>();
-        
-        /** - Zoeken naar teamgenoten - */ 
-        
-        // Vind alle routes tussen mieren
-        for (Tile ant : orderedAnts) 
-        {
-        	for (Tile idleAnt : gameState.getMyAnts()) 
-        	{
-        		int distance = gameState.getDistance(idleAnt, ant);
-        		Route route = new Route(idleAnt, ant, distance);
-        		teamupRoutes.add(route);
-        	}   
-        }
-        
-        // Sorteer de gevonden routes van kort naar lang
-        Collections.sort(teamupRoutes);
-        
-        /** - Deel orders uit - */ 
-        
-        // Deel aan de hand van de gevonden routes orders uit
-        for (Route route : teamupRoutes) 
-        {
-            if (gameState.getMyAnts().contains(route.getStart()))	// Als de mier nog geen doel heeft
-            {
-            	// Probeer de zet
-                doMoveLocation(gameState, route.getStart(),route.getEnd());
-            }
-        }		
-	}
-    
     /**
      * Functie die gegeven een lijst van Targets en van Ants routes zoekt en orders uitdeelt
      * @param gameState
@@ -132,7 +127,7 @@ public class MyBot extends Bot
      * @param orderedAnts
      * @param targets
      */
-    private void searchAndOrder(Ants gameState, Set<Tile> targets, Set<Tile> availableAnts, Set<Tile> orderedAnts) 
+    private void searchAndOrder(Ants gameState, Set<Tile> targets, Set<Tile> availableAnts, Set<Tile> orderedAnts, int maxOrders) 
     {
     	// Targets die al als doel worden gebruikt
     	HashMap<Tile,Tile> foodTargets = new HashMap<Tile,Tile>();
@@ -164,9 +159,14 @@ public class MyBot extends Bot
         
         /** - Deel orders uit - */  
         
+        int orders = 0;
+        
         // Deel aan de hand van de gevonden routes orders uit
         for (Route route : routes) 
         {
+        	if(orders >= maxOrders)
+            	break;
+        	
             if (   !foodTargets.containsKey(route.getEnd())         // Als target nog niet getarget is
                 && !foodTargets.containsValue(route.getStart()))    // Als de mier nog geen doel heeft
             {
@@ -179,8 +179,9 @@ public class MyBot extends Bot
                 	// Deze mier heeft nu een order
                 	availableAnts.remove(route.getStart());
                 	orderedAnts.add(route.getStart());
-                }            	
-            }
+                	orders++;
+                }         	
+            }   
         } 		
 	}
 	
