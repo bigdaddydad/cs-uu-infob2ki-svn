@@ -4,15 +4,21 @@ import javax.swing.SwingUtilities;
 public class Main {
     
     private static void createAndShowGUI() 
-    {   
+    {
     	Map map = new Map(8, 8);
 		map.addWall(4, 1);
 		map.addWall(4, 2);
 		map.addWall(4, 3);
-		map.addWall(4, 4);
+		map.addWall(3, 4);
+		map.addWall(1, 2);
+		map.addWall(1, 3);
+		map.addWall(2, 5);
+		map.addWall(3, 0);
+		map.addWall(7, 5);
+		map.addWall(0, 4);
 		
-		Tile begin = map.getData(7, 7);
-		Tile end = map.getData(2, 0);
+		Tile begin = map.getData(5, 5);
+		Tile end = map.getData(3, 3);
     	
         JFrame frame = new JFrame("Path Search");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
