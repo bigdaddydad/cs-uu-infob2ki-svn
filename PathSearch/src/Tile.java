@@ -24,4 +24,13 @@ public class Tile {
 	{
 		return col;
 	}
+	
+	public boolean equals(Object o) {
+        boolean result = false;
+        if (o instanceof Tile) {
+            Tile tile = (Tile)o;
+            result = row == tile.row && col == tile.col;
+        }
+        return result;
+    }
 }

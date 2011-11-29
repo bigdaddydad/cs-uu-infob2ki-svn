@@ -4,12 +4,13 @@ import java.awt.Graphics;
 import java.util.ArrayList;
 import javax.swing.JPanel;
 
-public class Canvas extends JPanel {
+public class Canvas extends JPanel implements Runnable {
 
 	private Map map;
 	private PathFinder pathFinder;
 	private Tile begin, end;
 	private final int size = 50;
+	private ArrayList<Tile> walkedPath = new ArrayList<Tile>();
 	
 	public Canvas(Map map, Tile begin, Tile end)
 	{
@@ -20,6 +21,8 @@ public class Canvas extends JPanel {
 		this.begin = begin;
 		this.end = end;
 		pathFinder = new PathFinder(map);
+		
+		new Thread(this).start();
 	}
 	
 	public void paintComponent(Graphics g) 
@@ -39,20 +42,32 @@ public class Canvas extends JPanel {
 			g.fillRect(t.getCol() * size, t.getRow() * size, size, size);
 		
 		// draw begin and end point
-		g.setColor(Color.BLUE);
-		g.fillOval(begin.getCol() * size, begin.getRow() * size, size, size);
 		g.setColor(Color.RED);
 		g.fillOval(end.getCol() * size, end.getRow() * size, size, size);
+		g.setColor(Color.BLUE);
+		g.fillOval(begin.getCol() * size, begin.getRow() * size, size, size);
 		
-		// get shortest path
-		ArrayList<Tile> shortestPath = pathFinder.shortestPath(begin, end);
-		
-		// draw shortest path
-		if (shortestPath != null)
-		{
-			g.setColor(Color.YELLOW);
-			for (Tile t : shortestPath)
-				g.fillOval(t.getCol() * size + size/4, t.getRow() * size + size/4, size/2, size/2);
-		}
+		// draw walked path
+		g.setColor(Color.YELLOW);
+		for (Tile t : walkedPath)
+			g.fillOval(t.getCol() * size + size/4, t.getRow() * size + size/4, size/2, size/2);
     }
+	
+	public void run() 
+	{
+		ArrayList<Tile> shortestPath;
+		
+		while ((shortestPath = pathFinder.shortestPath(begin, end)).size() > 0)
+		{
+			try {
+				Thread.sleep(1000);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}	
+			
+			walkedPath.add(begin);
+			begin = shortestPath.get(shortestPath.size()-1);
+			repaint();
+		}
+	}
 }
