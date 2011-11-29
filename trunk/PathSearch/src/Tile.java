@@ -1,5 +1,5 @@
 
-public class Tile implements Comparable<Tile> {
+public class Tile {
 
 	private int row;
 	private int col;
@@ -23,10 +23,5 @@ public class Tile implements Comparable<Tile> {
 	public int getCol()
 	{
 		return col;
-	}
-	
-	public int compareTo(Tile t) 
-	{
-		return f_score - t.f_score;
 	}
 }
