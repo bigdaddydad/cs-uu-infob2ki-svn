@@ -15,4 +15,23 @@ public class Team
 	{
 		teamMembers.remove(ant);
 	}
+	public Tile getTile()
+	{
+		float x = 0;
+		float y = 0;
+		int counter = 0;
+		
+		for(Tile tile : teamMembers)
+		{
+			x += tile.getRow();
+			y += tile.getCol();
+			
+			counter++;
+		}
+		
+		x /= counter;
+		y /= counter;
+		
+		return new Tile((int)x,(int)y);
+	}
 }
