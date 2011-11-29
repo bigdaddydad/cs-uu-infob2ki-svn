@@ -2,19 +2,19 @@
  * Represents a route from one tile to another.
  */
 public class Route implements Comparable<Route> {
-    private final Tile start;
+    private final Team start;
 
     private final Tile end;
 
     private final int distance;
 
-    public Route(Tile start, Tile end, int distance) {
+    public Route(Team start, Tile end, int distance) {
         this.start = start;
         this.end = end;
         this.distance = distance;
     }
 
-    public Tile getStart() {
+    public Team getStart() {
         return start;
     }
 

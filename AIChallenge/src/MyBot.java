@@ -41,57 +41,72 @@ public class MyBot extends Bot
         }
         
         /** - Geef alle mieren orders */
-        
-        // De nog beschikbare mieren
-        Set<Tile> availableAnts = gameState.getMyAnts();
-        
-        // De mieren met al een order
-        Set<Tile> orderedAnts = new HashSet<Tile>();
-        
+
         // Maak teams
-        Set<Team> teams = createTeams(gameState.getMyAnts(),2);
+        Set<Team> teams = createTeams(gameState.getMyAnts(),1,gameState);
         
         // Zoek naar eten
-	    searchAndOrder(gameState, gameState.getFoodTiles(), availableAnts, orderedAnts,2);  
+	    searchAndOrder(gameState, gameState.getFoodTiles(), teams,2);  
     
 	    // Verken de map
-	    searchAndOrder(gameState, unseenTiles, availableAnts, orderedAnts,2); 
+	    searchAndOrder(gameState, unseenTiles, teams,2); 
    
 	    // Verdedig eigen mierenhopen
-	    searchAndOrder(gameState, gameState.getMyHills(), availableAnts, orderedAnts,2);
+	    searchAndOrder(gameState, gameState.getMyHills(), teams,2);
 	       
 	    // Val vijandelijke mieren aan
-	    searchAndOrder(gameState, gameState.getEnemyAnts(), availableAnts, orderedAnts,2);          
+	    searchAndOrder(gameState, gameState.getEnemyAnts(), teams,2);          
 	    
 	    // Val vijandelijke mierenhopen aan
-	    searchAndOrder(gameState, gameState.getEnemyHills(), availableAnts, orderedAnts,2);
+	    searchAndOrder(gameState, gameState.getEnemyHills(), teams,2);
 
     }
     
-    private Set<Team> createTeams(Set<Tile> myAnts, int teamSize) 
+    private Set<Team> createTeams(Set<Tile> myAnts, int teamSize, Ants gameState) 
     {
 		Set<Team> teams = new HashSet<Team>();
 		
-		int counter = 0;
+		int counter = 1;
 		Team currentTeam = new Team();
+
+		Set<Tile> teamedAnts = new HashSet<Tile>();
 		
 		for(Tile ant : myAnts)
 		{
-			if(counter == 0 || counter == teamSize)
+			if(!teamedAnts.contains(ant))
 			{
 				currentTeam = new Team();
-				currentTeam.addMember(ant);
-				counter++;
-			}
-			else
+			}		
+			
+			for(Tile ant2 : myAnts)
 			{
-				currentTeam.addMember(ant);
-				counter++;
+				if(teamedAnts.contains(ant))
+					break;
 				
 				if(counter == teamSize)
-					counter = 0;
+				{
+					currentTeam.addMember(ant);
+					teamedAnts.add(ant);
+					teams.add(currentTeam);
+					break;
+				}
+				
+				if(ant != ant2 && (gameState.getDistance(ant, ant2)) < 4)
+				{
+					currentTeam.addMember(ant2);
+					teamedAnts.add(ant2);
+					counter++;
+				}
 			}
+			
+			if(!teamedAnts.contains(ant))
+			{
+				currentTeam.addMember(ant);
+				teamedAnts.add(ant);
+				teams.add(currentTeam);
+			}			
 		}
+
 		
 		return teams;
 	}
@@ -127,10 +142,10 @@ public class MyBot extends Bot
      * @param orderedAnts
      * @param targets
      */
-    private void searchAndOrder(Ants gameState, Set<Tile> targets, Set<Tile> availableAnts, Set<Tile> orderedAnts, int maxOrders) 
+    private void searchAndOrder(Ants gameState, Set<Tile> targets, Set<Team> teams, int maxOrders) 
     {
     	// Targets die al als doel worden gebruikt
-    	HashMap<Tile,Tile> foodTargets = new HashMap<Tile,Tile>();
+    	HashMap<Tile,Team> targetTiles = new HashMap<Tile,Team>();
     	
     	 // Lijst van gevonden routes
         List<Route> routes = new ArrayList<Route>();
@@ -138,18 +153,15 @@ public class MyBot extends Bot
         // Lijst van alle targets
         TreeSet<Tile> sortedTargets = new TreeSet<Tile>(targets);
         
-        // Lijst van alle beschikbare mieren
-        TreeSet<Tile> sortedAnts = new TreeSet<Tile>(availableAnts);
-        
         /** - Zoek routes - */ 
         
         // Vind alle routes tussen mieren en targets
         for (Tile foodLoc : sortedTargets) 
         {
-            for (Tile antLoc : sortedAnts) 
+            for (Team team : teams) 
             {
-                int distance = gameState.getDistance(antLoc, foodLoc);
-                Route route = new Route(antLoc, foodLoc, distance);
+                int distance = gameState.getDistance(team.getTile(), foodLoc);
+                Route route = new Route(team, foodLoc, distance);
                 routes.add(route);
             }
         }
@@ -167,20 +179,32 @@ public class MyBot extends Bot
         	if(orders >= maxOrders)
             	break;
         	
-            if (   !foodTargets.containsKey(route.getEnd())         // Als target nog niet getarget is
-                && !foodTargets.containsValue(route.getStart()))    // Als de mier nog geen doel heeft
+            if (   !targetTiles.containsKey(route.getEnd())         // Als target nog niet getarget is
+                && !targetTiles.containsValue(route.getStart()))    // Als de mier nog geen doel heeft
             {
-            	// Als de zet mogelijk is
-                if(doMoveLocation(gameState, route.getStart(),route.getEnd()))
-                {
-                	// Maak de connectie tussen de mier en de target
-                	foodTargets.put(route.getEnd(), route.getStart());
-                	
-                	// Deze mier heeft nu een order
-                	availableAnts.remove(route.getStart());
-                	orderedAnts.add(route.getStart());
-                	orders++;
-                }         	
+            	
+            	boolean moveSucces = false;
+            	
+            	for(Tile ant : new TreeSet<Tile>(route.getStart().teamMembers))
+            	{
+            		// Als de zet mogelijk is
+                    if(doMoveLocation(gameState, ant,route.getEnd()))
+                    {
+                    	// Maak de connectie tussen de mier en de target
+                    	targetTiles.put(route.getEnd(), route.getStart());
+                    	
+                    	// Deze mier heeft nu een order
+                    	orders++;
+                    	
+                    	// Er is een zet gelukt
+                    	moveSucces = true;
+                    }       
+            	}   
+            	
+            	if(moveSucces)
+            	{
+            		teams.remove(route.getStart());
+            	}
             }   
         } 		
 	}
