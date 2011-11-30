@@ -45,4 +45,8 @@ public class Route implements Comparable<Route> {
         }
         return result;
     }
+    @Override
+    public String toString() {
+        return "route " + start.getTile().toString() + " to " + end.toString();
+    }
 }
