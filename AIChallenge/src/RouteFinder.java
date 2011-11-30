@@ -1,5 +1,6 @@
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.LinkedList;
 import java.util.PriorityQueue;
 
 public class RouteFinder {
@@ -20,10 +21,9 @@ public class RouteFinder {
 		start.h_score = estimateDistance(start, goal, gameState);
 		start.f_score = start.g_score + start.h_score;
 		openset.add(start);
-
+		
 	    while (!openset.isEmpty())
 	    {
-
 	    	Tile x = openset.remove();
 	    	
 			if (x.equals(goal))
@@ -63,21 +63,18 @@ public class RouteFinder {
 	
 	private static Route reconstructRoute(Team team, Tile current)
 	{
-		//LinkedList<Tile> path = new LinkedList<Tile>();
+		LinkedList<Tile> path = new LinkedList<Tile>();
 		
-		int distance = 0;
 		Tile start = team.getTile();
 		Tile tile = current;
 		
 		while(tile != null && !tile.equals(start))
 		{
-			//path.addFirst(tile);
-			
-			distance++;
+			path.addFirst(tile);
 			tile = tile.parent;
 		}
-
-		return new Route(team, current, distance);
+		
+		return new Route(team, current, path);
 	}
 	
 	private static int estimateDistance(Tile t1, Tile t2, Ants gameState)
@@ -95,16 +92,16 @@ public class RouteFinder {
 	{
 		ArrayList<Tile> result = new ArrayList<Tile>();
 		
-		if (gameState.getIlk(tile, Aim.WEST).isPassable())
+		if (gameState.getIlk(tile, Aim.WEST).isUnoccupied())
 			result.add(gameState.getTile(tile, Aim.WEST));
 		
-		if (gameState.getIlk(tile, Aim.NORTH).isPassable())
+		if (gameState.getIlk(tile, Aim.NORTH).isUnoccupied())
 			result.add(gameState.getTile(tile, Aim.NORTH));
 		
-		if (gameState.getIlk(tile, Aim.EAST).isPassable())
+		if (gameState.getIlk(tile, Aim.EAST).isUnoccupied())
 			result.add(gameState.getTile(tile, Aim.EAST));
 		
-		if (gameState.getIlk(tile, Aim.SOUTH).isPassable())
+		if (gameState.getIlk(tile, Aim.SOUTH).isUnoccupied())
 			result.add(gameState.getTile(tile, Aim.SOUTH));
 		
 		return result;
