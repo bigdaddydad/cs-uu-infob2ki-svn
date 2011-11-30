@@ -20,13 +20,14 @@ public class RouteFinder {
 		start.h_score = estimateDistance(start, goal, gameState);
 		start.f_score = start.g_score + start.h_score;
 		openset.add(start);
-		
+
 	    while (!openset.isEmpty())
 	    {
+
 	    	Tile x = openset.remove();
 	    	
-			if (x == goal)
-				return reconstructRoute(team, goal);
+			if (x.equals(goal))
+				return reconstructRoute(team, goal);				
 			
 			closedset.add(x);
 			
@@ -56,7 +57,7 @@ public class RouteFinder {
 			    }
 			}
 	    }
-	    
+
 	    return null;
 	}
 	
@@ -68,14 +69,14 @@ public class RouteFinder {
 		Tile start = team.getTile();
 		Tile tile = current;
 		
-		while(tile != null && tile != start)
+		while(tile != null && !tile.equals(start))
 		{
 			//path.addFirst(tile);
 			
 			distance++;
 			tile = tile.parent;
 		}
-		
+
 		return new Route(team, current, distance);
 	}
 	

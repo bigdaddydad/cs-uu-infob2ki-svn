@@ -158,9 +158,9 @@ public class MyBot extends Bot
         {
             for (Team team : teams) 
             {
-                //int distance = gameState.getDistance(team.getTile(), target);
-                //Route route = new Route(team, target, distance);
-                //routes.add(route);
+               // int distance = gameState.getDistance(team.getTile(), target);
+               // Route route = new Route(team, target, distance);
+               // routes.add(route);
             	
             	// Vind de kortste route tussen mieren en target
             	Route route = RouteFinder.getShortestRoute(team, target, gameState);
