@@ -92,16 +92,16 @@ public class RouteFinder {
 	{
 		ArrayList<Tile> result = new ArrayList<Tile>();
 		
-		if (gameState.getIlk(tile, Aim.WEST).isUnoccupied())
+		if (gameState.getIlk(tile, Aim.WEST).isPassable())
 			result.add(gameState.getTile(tile, Aim.WEST));
 		
-		if (gameState.getIlk(tile, Aim.NORTH).isUnoccupied())
+		if (gameState.getIlk(tile, Aim.NORTH).isPassable())
 			result.add(gameState.getTile(tile, Aim.NORTH));
 		
-		if (gameState.getIlk(tile, Aim.EAST).isUnoccupied())
+		if (gameState.getIlk(tile, Aim.EAST).isPassable())
 			result.add(gameState.getTile(tile, Aim.EAST));
 		
-		if (gameState.getIlk(tile, Aim.SOUTH).isUnoccupied())
+		if (gameState.getIlk(tile, Aim.SOUTH).isPassable())
 			result.add(gameState.getTile(tile, Aim.SOUTH));
 		
 		return result;

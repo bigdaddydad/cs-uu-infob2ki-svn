@@ -46,19 +46,19 @@ public class MyBot extends Bot
         Set<Team> teams = createTeams(gameState.getMyAnts(),1,gameState);
         
         // Zoek naar eten
-	    searchAndOrder(gameState, gameState.getFoodTiles(), teams,1);  
+	    searchAndOrder(gameState, gameState.getFoodTiles(), teams,2);  
 	    
 	    // Verken de map
-	    searchAndOrder(gameState, unseenTiles, teams,2); 
+	    //searchAndOrder(gameState, unseenTiles, teams,2); 
 	    
 	    // Verdedig eigen mierenhopen
-	    searchAndOrder(gameState, gameState.getMyHills(), teams,2);
+	    //searchAndOrder(gameState, gameState.getMyHills(), teams,2);
 	    
 	    // Val vijandelijke mieren aan
-	    searchAndOrder(gameState, gameState.getEnemyAnts(), teams,2);          
+	    //searchAndOrder(gameState, gameState.getEnemyAnts(), teams,2);          
 	    
 	    // Val vijandelijke mierenhopen aan
-	    searchAndOrder(gameState, gameState.getEnemyHills(), teams,2);
+	    //searchAndOrder(gameState, gameState.getEnemyHills(), teams,2);
     }
     
     private Set<Team> createTeams(Set<Tile> myAnts, int teamSize, Ants gameState) 
@@ -193,7 +193,7 @@ public class MyBot extends Bot
             	for(Tile ant : new TreeSet<Tile>(route.getStart().teamMembers))
             	{
             		// Als de zet mogelijk is
-                    if(doMoveLocation(gameState, ant,route.getEnd()))
+                    if(doMoveLocation(gameState, ant, route.getPath().getFirst()))
                     {
                     	// Maak de connectie tussen de mier en de target
                     	targetTiles.put(route.getEnd(), route.getStart());
