@@ -5,9 +5,9 @@ import java.util.PriorityQueue;
 
 public class RouteFinder {
 	
-	public static Route getShortestRoute(Team team, Tile goal, Ants gameState)
+	public static Route getShortestRoute(Tile ant, Tile goal, Ants gameState)
 	{
-		Tile start = team.getTile();
+		Tile start = ant;
 		
 		ArrayList<Tile> closedset = new ArrayList<Tile>();
 		PriorityQueue<Tile> openset = new PriorityQueue<Tile>(1, new Comparator<Tile>() {
@@ -27,7 +27,7 @@ public class RouteFinder {
 	    	Tile x = openset.remove();
 	    	
 			if (x.equals(goal))
-				return reconstructRoute(team, goal);				
+				return reconstructRoute(ant, goal);				
 			
 			closedset.add(x);
 			
@@ -61,11 +61,11 @@ public class RouteFinder {
 	    return null;
 	}
 	
-	private static Route reconstructRoute(Team team, Tile current)
+	private static Route reconstructRoute(Tile ant, Tile current)
 	{
 		LinkedList<Tile> path = new LinkedList<Tile>();
 		
-		Tile start = team.getTile();
+		Tile start = ant;
 		Tile tile = current;
 		
 		while(tile != null && !tile.equals(start))
@@ -74,7 +74,7 @@ public class RouteFinder {
 			tile = tile.parent;
 		}
 		
-		return new Route(team, current, path);
+		return new Route(ant, current, path);
 	}
 	
 	private static int estimateDistance(Tile t1, Tile t2, Ants gameState)

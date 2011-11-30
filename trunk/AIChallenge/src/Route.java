@@ -1,3 +1,4 @@
+import java.util.HashMap;
 import java.util.LinkedList;
 
 /**
@@ -5,20 +6,21 @@ import java.util.LinkedList;
  */
 public class Route implements Comparable<Route> {
     
-	private final Team start;
+	private Tile location;
     private final Tile end;
     private final int distance;
     private final LinkedList<Tile> path;
+    public boolean finished = false;
     
-    public Route(Team start, Tile end, LinkedList<Tile> path) {
-        this.start = start;
+    public Route(Tile start, Tile end, LinkedList<Tile> path) {
+        this.location = start;
         this.end = end;
         this.path = path;
         this.distance = path.size();
     }
     
-    public Team getStart() {
-        return start;
+    public Tile getCurrentLocation() {
+        return location;
     }
 
     public Tile getEnd() {
@@ -40,7 +42,7 @@ public class Route implements Comparable<Route> {
 
     @Override
     public int hashCode() {
-        return start.hashCode() * Ants.MAX_MAP_SIZE * Ants.MAX_MAP_SIZE + end.hashCode();
+        return location.hashCode() * Ants.MAX_MAP_SIZE * Ants.MAX_MAP_SIZE + end.hashCode();
     }
 
     @Override
@@ -48,12 +50,27 @@ public class Route implements Comparable<Route> {
         boolean result = false;
         if (o instanceof Route) {
             Route route = (Route)o;
-            result = start.equals(route.start) && end.equals(route.end);
+            result = location.equals(route.location) && end.equals(route.end);
         }
         return result;
     }
     @Override
     public String toString() {
-        return "route " + start.getTile().toString() + " to " + end.toString();
+        return "route " + location.toString() + " to " + end.toString();
     }
+
+	public void doStep(Ants gameState,MyBot bot) 
+	{
+		if(path.isEmpty())
+		{
+			finished = true;
+		}
+		else if(bot.doMoveLocation(gameState, location, path.getFirst()))
+		{
+			location = path.getFirst();
+			
+			path.removeFirst();
+		}
+		
+	}
 }
