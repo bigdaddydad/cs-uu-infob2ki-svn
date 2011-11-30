@@ -4,6 +4,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
@@ -15,6 +16,7 @@ public class MyBot extends Bot
 {
 	// Gereserveerde Locaties
 	private HashMap<Tile,Tile> reservedTiles = new HashMap<Tile,Tile>();
+	private LinkedList<Route> activeRoutes = new LinkedList<Route>();
 	private Set<Tile> unseenTiles;
 	
     /**
@@ -40,73 +42,54 @@ public class MyBot extends Bot
             reservedTiles.put(myHill, null);
         }
         
+        // Reserveer eigen mierlocaties als niet-toegangbare locaties
+        for (Tile myAnt : gameState.getMyAnts()) 
+        {
+            reservedTiles.put(myAnt, null);
+        }
+        
         /** - Geef alle mieren orders */
         
-        // Maak teams
-        Set<Team> teams = createTeams(gameState.getMyAnts(),1,gameState);
+        // Voer active routes uit, en haal routes die zijn afgelopen weg
+        updateRoutes(gameState);
         
         // Zoek naar eten
-	    searchAndOrder(gameState, gameState.getFoodTiles(), teams,2);  
+	    searchAndOrder(gameState, gameState.getFoodTiles(), gameState.getMyAnts(),2);  
 	    
 	    // Verken de map
-	    //searchAndOrder(gameState, unseenTiles, teams,2); 
+	    //searchAndOrder(gameState, unseenTiles, gameState.getMyAnts(),2); 
 	    
 	    // Verdedig eigen mierenhopen
-	    //searchAndOrder(gameState, gameState.getMyHills(), teams,2);
+	    //searchAndOrder(gameState, gameState.getMyHills(), gameState.getMyAnts(),2);
 	    
 	    // Val vijandelijke mieren aan
-	    //searchAndOrder(gameState, gameState.getEnemyAnts(), teams,2);          
+	    //searchAndOrder(gameState, gameState.getEnemyAnts(), gameState.getMyAnts(),2);          
 	    
 	    // Val vijandelijke mierenhopen aan
-	    //searchAndOrder(gameState, gameState.getEnemyHills(), teams,2);
+	    //searchAndOrder(gameState, gameState.getEnemyHills(), gameState.getMyAnts(),2);
     }
-    
-    private Set<Team> createTeams(Set<Tile> myAnts, int teamSize, Ants gameState) 
-    {
-		Set<Team> teams = new HashSet<Team>();
-		
-		int counter = 1;
-		Team currentTeam = new Team();
 
-		Set<Tile> teamedAnts = new HashSet<Tile>();
-		
-		for(Tile ant : myAnts)
-		{
-			if(!teamedAnts.contains(ant))
-			{
-				currentTeam = new Team();
-			}		
-			
-			for(Tile ant2 : myAnts)
-			{
-				if(teamedAnts.contains(ant))
-					break;
-				
-				if(counter == teamSize)
-				{
-					currentTeam.addMember(ant);
-					teamedAnts.add(ant);
-					teams.add(currentTeam);
-					break;
-				}
-				
-				if(ant != ant2 && (gameState.getDistance(ant, ant2)) < 4)
-				{
-					currentTeam.addMember(ant2);
-					teamedAnts.add(ant2);
-					counter++;
-				}
-			}
-			
-			if(!teamedAnts.contains(ant))
-			{
-				currentTeam.addMember(ant);
-				teamedAnts.add(ant);
-				teams.add(currentTeam);
-			}		
-		}
-		
-		return teams;
+	private void updateRoutes(Ants gameState) 
+	{
+		// Lijst van routes die klaar zijn
+        LinkedList<Route> finishedRoutes = new LinkedList<Route>();
+        
+        // Voer alle actieve routes uit
+        for(Route route : activeRoutes)
+        {
+        	route.doStep(gameState,this);
+        	
+        	if(route.finished)
+        		finishedRoutes.add(route);
+        	else
+        		reservedTiles.put(route.getEnd(),route.getCurrentLocation());
+        }
+        
+        // Haal de routes uit de actieve lijst als ze klaar zijn
+        for(Route route : finishedRoutes)
+        {
+        	activeRoutes.remove(route);
+        }
 	}
 
 	private void updateMap(Ants gameState)
@@ -140,10 +123,10 @@ public class MyBot extends Bot
      * @param orderedAnts
      * @param targets
      */
-    private void searchAndOrder(Ants gameState, Set<Tile> targets, Set<Team> teams, int maxOrders) 
+    private void searchAndOrder(Ants gameState, Set<Tile> targets, Set<Tile> ants, int maxOrders) 
     {
     	// Targets die al als doel worden gebruikt
-    	HashMap<Tile,Team> targetTiles = new HashMap<Tile,Team>();
+    	HashMap<Tile,Tile> targetTiles = new HashMap<Tile,Tile>();
     	
     	 // Lijst van gevonden routes
         List<Route> routes = new ArrayList<Route>();
@@ -156,19 +139,18 @@ public class MyBot extends Bot
         // Vind alle routes tussen mieren en targets
         for (Tile target : sortedTargets) 
         {
-            for (Team team : teams) 
-            {
-               // int distance = gameState.getDistance(team.getTile(), target);
-               // Route route = new Route(team, target, distance);
-               // routes.add(route);
-            	
-            	// Vind de kortste route tussen mieren en target
-            	Route route = RouteFinder.getShortestRoute(team, target, gameState);
-            	
-            	// Als er een route gevonden is, voeg deze dan toe aan lijst van routes
-            	if (route != null)
-            		routes.add(route);
-            }
+        	if(!reservedTiles.containsKey(target))
+        	{
+                for (Tile ant : ants) 
+                {
+                	// Vind de kortste route tussen mieren en target
+                	Route route = RouteFinder.getShortestRoute(ant, target, gameState);
+                	
+                	// Als er een route gevonden is, voeg deze dan toe aan lijst van routes
+                	if (route != null)
+                		routes.add(route);
+                }
+        	}
         }
         
         // Sorteer de gevonden routes van kort naar lang
@@ -185,31 +167,19 @@ public class MyBot extends Bot
             	break;
         	
             if (   !targetTiles.containsKey(route.getEnd())         // Als target nog niet getarget is
-                && !targetTiles.containsValue(route.getStart()))    // Als de mier nog geen doel heeft
+                && !targetTiles.containsValue(route.getCurrentLocation()))    // Als de mier nog geen doel heeft
             {
+            	// Probeer de route uit te voeren
+            	route.doStep(gameState,this);
             	
-            	boolean moveSucces = false;
+            	// Voeg de route aan de lijst toe
+            	activeRoutes.add(route);
             	
-            	for(Tile ant : new TreeSet<Tile>(route.getStart().teamMembers))
-            	{
-            		// Als de zet mogelijk is
-                    if(doMoveLocation(gameState, ant, route.getPath().getFirst()))
-                    {
-                    	// Maak de connectie tussen de mier en de target
-                    	targetTiles.put(route.getEnd(), route.getStart());
-                    	
-                    	// Deze mier heeft nu een order
-                    	orders++;
-                    	
-                    	// Er is een zet gelukt
-                    	moveSucces = true;
-                    }       
-            	}   
-            	
-            	if(moveSucces)
-            	{
-            		teams.remove(route.getStart());
-            	}
+            	// Maak de connectie tussen mier en target
+            	targetTiles.put(route.getEnd(), route.getCurrentLocation());
+                   	
+            	// Deze mier heeft nu een order
+            	orders ++;
             }   
         } 		
 	}
@@ -220,7 +190,7 @@ public class MyBot extends Bot
      * @param myAnt
      * @param location
      */
-	private boolean doMoveLocation(Ants gameState, Tile myAnt, Tile targetLocation) 
+	public boolean doMoveLocation(Ants gameState, Tile myAnt, Tile targetLocation) 
     {
     	// Haal de mogelijk directies op naar het doel
     	List<Aim> directions = gameState.getDirections(myAnt, targetLocation);
@@ -254,6 +224,9 @@ public class MyBot extends Bot
         	
         	// Sla de order op
         	reservedTiles.put(gameState.getTile(myAnt, direction), myAnt);
+        	
+        	// Maak vorige positie vrij
+        	reservedTiles.remove(myAnt);
         	
         	return true;
         }
