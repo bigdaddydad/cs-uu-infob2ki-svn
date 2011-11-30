@@ -16,7 +16,7 @@ public class MyBot extends Bot
 	// Gereserveerde Locaties
 	private HashMap<Tile,Tile> reservedTiles = new HashMap<Tile,Tile>();
 	private Set<Tile> unseenTiles;
-    
+	
     /**
      * Functie die iedere ronde wordt uitgevoerd
      */
@@ -41,25 +41,24 @@ public class MyBot extends Bot
         }
         
         /** - Geef alle mieren orders */
-
+        
         // Maak teams
         Set<Team> teams = createTeams(gameState.getMyAnts(),1,gameState);
         
         // Zoek naar eten
-	    searchAndOrder(gameState, gameState.getFoodTiles(), teams,2);  
-    
+	    searchAndOrder(gameState, gameState.getFoodTiles(), teams,1);  
+	    
 	    // Verken de map
 	    searchAndOrder(gameState, unseenTiles, teams,2); 
-   
+	    
 	    // Verdedig eigen mierenhopen
 	    searchAndOrder(gameState, gameState.getMyHills(), teams,2);
-	       
+	    
 	    // Val vijandelijke mieren aan
 	    searchAndOrder(gameState, gameState.getEnemyAnts(), teams,2);          
 	    
 	    // Val vijandelijke mierenhopen aan
 	    searchAndOrder(gameState, gameState.getEnemyHills(), teams,2);
-
     }
     
     private Set<Team> createTeams(Set<Tile> myAnts, int teamSize, Ants gameState) 
@@ -104,9 +103,8 @@ public class MyBot extends Bot
 				currentTeam.addMember(ant);
 				teamedAnts.add(ant);
 				teams.add(currentTeam);
-			}			
+			}		
 		}
-
 		
 		return teams;
 	}
@@ -156,13 +154,20 @@ public class MyBot extends Bot
         /** - Zoek routes - */ 
         
         // Vind alle routes tussen mieren en targets
-        for (Tile foodLoc : sortedTargets) 
+        for (Tile target : sortedTargets) 
         {
             for (Team team : teams) 
             {
-                int distance = gameState.getDistance(team.getTile(), foodLoc);
-                Route route = new Route(team, foodLoc, distance);
-                routes.add(route);
+                //int distance = gameState.getDistance(team.getTile(), target);
+                //Route route = new Route(team, target, distance);
+                //routes.add(route);
+            	
+            	// Vind de kortste route tussen mieren en target
+            	Route route = RouteFinder.getShortestRoute(team, target, gameState);
+            	
+            	// Als er een route gevonden is, voeg deze dan toe aan lijst van routes
+            	if (route != null)
+            		routes.add(route);
             }
         }
         

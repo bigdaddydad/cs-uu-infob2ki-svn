@@ -2,8 +2,13 @@
  * Represents a tile of the game map.
  */
 public class Tile implements Comparable<Tile> {
-    private final int row;
     
+	public Tile parent;
+	public int g_score;
+	public int h_score;
+	public int f_score;
+	
+	private final int row;
     private final int col;
     
     /**
