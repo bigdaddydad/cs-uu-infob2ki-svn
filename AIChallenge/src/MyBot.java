@@ -42,34 +42,39 @@ public class MyBot extends Bot
             reservedTiles.put(myHill, null);
         }
         
+        Set<Tile> availableAnts = new HashSet<Tile>();
+        
         // Reserveer eigen mierlocaties als niet-toegangbare locaties
         for (Tile myAnt : gameState.getMyAnts()) 
         {
+        	availableAnts.add(myAnt);
             reservedTiles.put(myAnt, null);
         }
         
         /** - Geef alle mieren orders */
         
+        System.out.println("ants "+gameState.getMyAnts());
+        
         // Voer active routes uit, en haal routes die zijn afgelopen weg
-        updateRoutes(gameState);
+        updateRoutes(gameState,availableAnts);
         
         // Zoek naar eten
-	    searchAndOrder(gameState, gameState.getFoodTiles(), gameState.getMyAnts(),2);  
+	    searchAndOrder(gameState, gameState.getFoodTiles(),availableAnts,2);  
 	    
 	    // Verken de map
-	    //searchAndOrder(gameState, unseenTiles, gameState.getMyAnts(),2); 
+	    searchAndOrder(gameState, unseenTiles, availableAnts,2); 
 	    
 	    // Verdedig eigen mierenhopen
-	    //searchAndOrder(gameState, gameState.getMyHills(), gameState.getMyAnts(),2);
+	    searchAndOrder(gameState, gameState.getMyHills(), availableAnts,2);
 	    
 	    // Val vijandelijke mieren aan
-	    //searchAndOrder(gameState, gameState.getEnemyAnts(), gameState.getMyAnts(),2);          
+	    searchAndOrder(gameState, gameState.getEnemyAnts(), availableAnts,2);          
 	    
 	    // Val vijandelijke mierenhopen aan
-	    //searchAndOrder(gameState, gameState.getEnemyHills(), gameState.getMyAnts(),2);
+	    searchAndOrder(gameState, gameState.getEnemyHills(), availableAnts,2);
     }
 
-	private void updateRoutes(Ants gameState) 
+	private void updateRoutes(Ants gameState, Set<Tile> availableAnts) 
 	{
 		// Lijst van routes die klaar zijn
         LinkedList<Route> finishedRoutes = new LinkedList<Route>();
@@ -77,12 +82,24 @@ public class MyBot extends Bot
         // Voer alle actieve routes uit
         for(Route route : activeRoutes)
         {
+        	// Mier is bezig met route
+        	availableAnts.remove(route.getCurrentLocation());
+        	
+        	System.out.println("executing route "+route.toString());
+        	
+        	// Probeer een zet
         	route.doStep(gameState,this);
         	
         	if(route.finished)
+        	{
+        		// Route is afgelopen
         		finishedRoutes.add(route);
+        		
+        		// Route is al klaar, mier is weer beschikbaar
+        		availableAnts.add(route.getCurrentLocation());
+        	}
         	else
-        		reservedTiles.put(route.getEnd(),route.getCurrentLocation());
+        		reservedTiles.put(route.getEnd(),route.getCurrentLocation());      	
         }
         
         // Haal de routes uit de actieve lijst als ze klaar zijn
@@ -125,6 +142,8 @@ public class MyBot extends Bot
      */
     private void searchAndOrder(Ants gameState, Set<Tile> targets, Set<Tile> ants, int maxOrders) 
     {
+    	System.out.println("ants "+ants.size());
+    	
     	// Targets die al als doel worden gebruikt
     	HashMap<Tile,Tile> targetTiles = new HashMap<Tile,Tile>();
     	
@@ -169,15 +188,21 @@ public class MyBot extends Bot
             if (   !targetTiles.containsKey(route.getEnd())         // Als target nog niet getarget is
                 && !targetTiles.containsValue(route.getCurrentLocation()))    // Als de mier nog geen doel heeft
             {
-            	// Probeer de route uit te voeren
-            	route.doStep(gameState,this);
-            	
+
             	// Voeg de route aan de lijst toe
             	activeRoutes.add(route);
             	
             	// Maak de connectie tussen mier en target
             	targetTiles.put(route.getEnd(), route.getCurrentLocation());
-                   	
+            	
+            	System.out.println("creating route "+route.toString());
+            	
+            	// Probeer de route uit te voeren
+            	//route.doStep(gameState,this);
+                
+            	// Beschikbare mieren updaten
+            	ants.remove(route.getCurrentLocation());
+            	
             	// Deze mier heeft nu een order
             	orders ++;
             }   

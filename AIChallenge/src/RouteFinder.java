@@ -27,7 +27,7 @@ public class RouteFinder {
 	    	Tile x = openset.remove();
 	    	
 			if (x.equals(goal))
-				return reconstructRoute(ant, goal);				
+				return reconstructRoute(ant, x);				
 			
 			closedset.add(x);
 			
