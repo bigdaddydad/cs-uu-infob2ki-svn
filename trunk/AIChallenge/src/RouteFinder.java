@@ -5,7 +5,7 @@ import java.util.PriorityQueue;
 
 public class RouteFinder {
 	
-	public static Route getShortestRoute(Tile start, Tile goal, Ants gameState)
+	public static Route getShortestRoute(Ants gameState, Target target, Tile startLoc, Tile targetLoc)
 	{
 		ArrayList<Tile> closedset = new ArrayList<Tile>();
 		PriorityQueue<Tile> openset = new PriorityQueue<Tile>(1, new Comparator<Tile>() {
@@ -14,22 +14,22 @@ public class RouteFinder {
 			}
 		});
 		
-		start.parent = null;
-		start.g_score = 0;
-		start.h_score = estimateDistance(start, goal, gameState);
-		start.f_score = start.g_score + start.h_score;
-		openset.add(start);
+		startLoc.parent = null;
+		startLoc.g_score = 0;
+		startLoc.h_score = estimateDistance(gameState, startLoc, targetLoc);
+		startLoc.f_score = startLoc.g_score + startLoc.h_score;
+		openset.add(startLoc);
 		
 	    while (!openset.isEmpty())
 	    {
 	    	Tile x = openset.remove();
 	    	
-			if (x.equals(goal))
-				return reconstructRoute(start, x);				
+			if (x.equals(targetLoc))
+				return reconstructRoute(target, startLoc, x);				
 			
 			closedset.add(x);
 			
-			for (Tile y : getNeighbors(x, gameState))
+			for (Tile y : getNeighbors(gameState, x))
 			{
 			    if (closedset.contains(y))
 			    	continue;
@@ -40,7 +40,7 @@ public class RouteFinder {
 			    {
 			    	y.parent = x;
 			        y.g_score = g_score;
-			        y.h_score = estimateDistance(y, goal, gameState);
+			        y.h_score = estimateDistance(gameState, y, targetLoc);
 			        y.f_score = y.g_score + y.h_score;
 			        openset.add(y);
 			    }
@@ -49,7 +49,7 @@ public class RouteFinder {
 			    	openset.remove(y);
 			    	y.parent = x;
 			        y.g_score = g_score;
-			        y.h_score = estimateDistance(y, goal, gameState);
+			        y.h_score = estimateDistance(gameState, y, targetLoc);
 			        y.f_score = y.g_score + y.h_score;
 			        openset.add(y);
 			    }
@@ -59,21 +59,21 @@ public class RouteFinder {
 	    return null;
 	}
 	
-	private static Route reconstructRoute(Tile start, Tile end)
+	private static Route reconstructRoute(Target target, Tile startLoc, Tile targetLoc)
 	{
 		LinkedList<Tile> path = new LinkedList<Tile>();
-		Tile current = end;
+		Tile current = targetLoc;
 		
-		while(current != null && !current.equals(start))
+		while(current != null && !current.equals(startLoc))
 		{
 			path.addFirst(current);
 			current = current.parent;
 		}
 		
-		return new Route(start, end, path);
+		return new Route(target, startLoc, targetLoc, path);
 	}
 	
-	private static int estimateDistance(Tile t1, Tile t2, Ants gameState)
+	private static int estimateDistance(Ants gameState, Tile t1, Tile t2)
 	{
 		int rowDelta = Math.abs(t1.getRow() - t2.getRow());
         int colDelta = Math.abs(t1.getCol() - t2.getCol());
@@ -84,21 +84,21 @@ public class RouteFinder {
         return rowDelta + colDelta;
 	}
 	
-	private static ArrayList<Tile> getNeighbors(Tile tile, Ants gameState)
+	private static ArrayList<Tile> getNeighbors(Ants gameState, Tile t)
 	{
 		ArrayList<Tile> result = new ArrayList<Tile>();
 		
-		if (gameState.getIlk(tile, Aim.WEST).isPassable())
-			result.add(gameState.getTile(tile, Aim.WEST));
+		if (gameState.getIlk(t, Aim.WEST).isPassable())
+			result.add(gameState.getTile(t, Aim.WEST));
 		
-		if (gameState.getIlk(tile, Aim.NORTH).isPassable())
-			result.add(gameState.getTile(tile, Aim.NORTH));
+		if (gameState.getIlk(t, Aim.NORTH).isPassable())
+			result.add(gameState.getTile(t, Aim.NORTH));
 		
-		if (gameState.getIlk(tile, Aim.EAST).isPassable())
-			result.add(gameState.getTile(tile, Aim.EAST));
+		if (gameState.getIlk(t, Aim.EAST).isPassable())
+			result.add(gameState.getTile(t, Aim.EAST));
 		
-		if (gameState.getIlk(tile, Aim.SOUTH).isPassable())
-			result.add(gameState.getTile(tile, Aim.SOUTH));
+		if (gameState.getIlk(t, Aim.SOUTH).isPassable())
+			result.add(gameState.getTile(t, Aim.SOUTH));
 		
 		return result;
 	}

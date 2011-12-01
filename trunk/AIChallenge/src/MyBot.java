@@ -60,19 +60,19 @@ public class MyBot extends Bot
         updateRoutes(gameState);
         
         // Zoek naar eten
-	    searchAndOrder(gameState, gameState.getFoodTiles(), 2);  
+	    searchAndOrder(gameState, Target.FOOD, gameState.getFoodTiles(), 2);  
 	    
 	    // Verken de map
-	    searchAndOrder(gameState, unseenTiles, 2); 
+	    searchAndOrder(gameState, Target.LAND, unseenTiles, 2); 
 	    
 	    // Verdedig eigen mierenhopen
-	    searchAndOrder(gameState, gameState.getMyHills(), 2);
+	    searchAndOrder(gameState, Target.MY_HILL, gameState.getMyHills(), 2);
 	    
 	    // Val vijandelijke mieren aan
-	    searchAndOrder(gameState, gameState.getEnemyAnts(), 2);          
+	    searchAndOrder(gameState, Target.ENEMY_ANT, gameState.getEnemyAnts(), 2);          
 	    
 	    // Val vijandelijke mierenhopen aan
-	    searchAndOrder(gameState, gameState.getEnemyHills(), 2);
+	    searchAndOrder(gameState, Target.ENEMY_HILL, gameState.getEnemyHills(), 2);
     }
     
 	private void updateRoutes(Ants gameState) 
@@ -83,31 +83,58 @@ public class MyBot extends Bot
         // Voer alle actieve routes uit
         for (Route route : activeRoutes)
         {
+        	boolean inActive;
+        	
         	if (!availableAnts.contains(route.getCurrentLocation()))
         	{
-        		// Haal route uit actieve lijst als mier dood is
-        		finishedRoutes.add(route);
-        		continue;
-        	}
-        	
-        	// Mier is bezig met route
-        	availableAnts.remove(route.getCurrentLocation());
-        	
-        	//System.out.println("executing route "+route.toString());
-        	
-        	// Probeer een zet
-        	route.doStep(gameState,this);
-        	
-        	if (route.finished)
-        	{
-        		// Route is afgelopen
-        		finishedRoutes.add(route);
-        		
-        		// Route is al klaar, mier is weer beschikbaar
-        		availableAnts.add(route.getCurrentLocation());
+        		// Maak route inactief als mier dood is
+        		inActive = true;
         	}
         	else
-        		reservedTiles.put(route.getEnd(),route.getCurrentLocation());      	
+        	{
+        		Tile targetLoc = route.getTargetLocation();
+        		
+        		// Maak route inactief als target niet meer bestaat
+	        	switch (route.getTarget()) 
+	        	{
+		            case FOOD: inActive = !gameState.getFoodTiles().contains(targetLoc); break;
+		            case MY_HILL: inActive = !gameState.getMyHills().contains(targetLoc); break;
+		            case ENEMY_HILL: inActive = !gameState.getEnemyHills().contains(targetLoc); break;
+		            case ENEMY_ANT: inActive = !gameState.getEnemyAnts().contains(targetLoc); break;
+		            case LAND: inActive = !unseenTiles.contains(targetLoc); break;
+		            default: inActive = false;
+		        }
+        	}
+        	
+        	if (inActive)
+        	{
+        		// Haal route uit actieve lijst als deze inactief is geworden
+        		finishedRoutes.add(route);
+        	}
+        	else
+        	{
+	        	// Mier is bezig met route
+	        	availableAnts.remove(route.getCurrentLocation());
+	        	
+	        	//System.out.println("executing route "+route.toString());
+	        	
+	        	// Probeer een zet
+	        	route.doStep(gameState, this);
+	        	
+	        	if (route.finished)
+	        	{
+	        		// Route is afgelopen
+	        		finishedRoutes.add(route);
+	        		
+	        		// Route is al klaar, mier is weer beschikbaar
+	        		availableAnts.add(route.getCurrentLocation());
+	        	}
+	        	else
+	        	{
+	        		// Reserveer de positie van de target
+	        		reservedTiles.put(route.getTargetLocation(), route.getCurrentLocation());      	
+	        	}
+        	}
         }
         
         // Haal de routes uit de actieve lijst als ze klaar zijn
@@ -146,9 +173,9 @@ public class MyBot extends Bot
      * @param gameState
      * @param availableAnts
      * @param orderedAnts
-     * @param targets
+     * @param targetLocs
      */
-    private void searchAndOrder(Ants gameState, Set<Tile> targets, int maxOrders) 
+    private void searchAndOrder(Ants gameState, Target target, Set<Tile> targetLocs, int maxOrders) 
     {
     	//System.out.println("ants "+availableAnts.size());
     	
@@ -159,19 +186,19 @@ public class MyBot extends Bot
         List<Route> routes = new ArrayList<Route>();
         
         // Lijst van alle targets
-        TreeSet<Tile> sortedTargets = new TreeSet<Tile>(targets);
+        TreeSet<Tile> sortedTargets = new TreeSet<Tile>(targetLocs);
         
         /** - Zoek routes - */ 
         
         // Vind alle routes tussen mieren en targets
-        for (Tile target : sortedTargets) 
+        for (Tile targetLoc : sortedTargets) 
         {
-        	if(!reservedTiles.containsKey(target))
+        	if(!reservedTiles.containsKey(targetLoc))
         	{
-                for (Tile ant : availableAnts) 
+                for (Tile ant : availableAnts)
                 {
                 	// Vind de kortste route tussen mieren en target
-                	Route route = RouteFinder.getShortestRoute(ant, target, gameState);
+                	Route route = RouteFinder.getShortestRoute(gameState, target, ant, targetLoc);
                 	
                 	// Als er een route gevonden is, voeg deze dan toe aan lijst van routes
                 	if (route != null)
@@ -193,15 +220,15 @@ public class MyBot extends Bot
         	if(orders >= maxOrders)
             	break;
         	
-            if (   !targetTiles.containsKey(route.getEnd())         // Als target nog niet getarget is
-                && !targetTiles.containsValue(route.getCurrentLocation()))    // Als de mier nog geen doel heeft
+            if (   !targetTiles.containsKey(route.getTargetLocation())      // Als target nog niet getarget is
+                && !targetTiles.containsValue(route.getCurrentLocation()))	// Als de mier nog geen doel heeft
             {
 
             	// Voeg de route aan de lijst toe
             	activeRoutes.add(route);
             	
             	// Maak de connectie tussen mier en target
-            	targetTiles.put(route.getEnd(), route.getCurrentLocation());
+            	targetTiles.put(route.getTargetLocation(), route.getCurrentLocation());
             	
             	//System.out.println("creating route "+route.toString());
             	
@@ -255,10 +282,10 @@ public class MyBot extends Bot
         	// Geef de order door aan het systeem
         	gameState.issueOrder(myAnt, direction);
         	
-        	// Reserveer de nieuwe positie
+        	// Reserveer de nieuwe positie van de mier
         	reservedTiles.put(gameState.getTile(myAnt, direction), myAnt);
         	
-        	// Maak vorige positie vrij
+        	// Maak de vorige positie van de mier vrij
         	reservedTiles.remove(myAnt);
         	
         	return true;
