@@ -1,5 +1,5 @@
 /**
- * Represents type of target on the game map.
+ * Represents type of a target on the game map.
  */
 public enum Target {
     /** Food target. */
