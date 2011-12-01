@@ -10,7 +10,7 @@ import java.util.Set;
 import java.util.TreeSet;
 
 /**
- * Starter bot implementation.
+ * Bot implementation.
  */
 public class MyBot extends Bot 
 {
@@ -76,18 +76,23 @@ public class MyBot extends Bot
 	    //searchAndOrder(gameState, Target.MY_HILL, gameState.getMyHills(), 2); 
     }
     
+    /**
+     * Functie die alle actieve routes update
+     */
 	private void updateRoutes(Ants gameState) 
 	{
+		// Lijst van routes die inactief zijn
+        LinkedList<Route> inactiveRoutes = new LinkedList<Route>();
+        
         // Voer alle actieve routes uit
-        for (Iterator<Route> i = activeRoutes.iterator(); i.hasNext();)
+        for (Route route : activeRoutes)
         {
-        	Route route = i.next();
-        	boolean inActive = false;
+        	boolean inactive = false;
         	
         	if (!availableAnts.contains(route.getCurrentLocation()))
         	{
         		// Maak route inactief als mier dood is
-        		inActive = true;
+        		inactive = true;
         	}
         	else
         	{
@@ -96,15 +101,15 @@ public class MyBot extends Bot
         		// Maak route inactief als target niet meer bestaat
 	        	switch (route.getTarget()) 
 	        	{
-		            case FOOD: inActive = !gameState.getFoodTiles().contains(targetLoc); break;
-		            case ENEMY_HILL: inActive = !enemyHills.contains(targetLoc); break;
+		            case FOOD: inactive = !gameState.getFoodTiles().contains(targetLoc); break;
+		            case ENEMY_HILL: inactive = !enemyHills.contains(targetLoc); break;
 		        }
         	}
         	
-        	if (inActive)
+        	if (inactive)
         	{
-        		// Haal route uit actieve lijst als deze inactief is geworden
-        		i.remove();
+        		// Route is inactief geworden
+        		inactiveRoutes.add(route);
         	}
         	else
         	{
@@ -119,7 +124,7 @@ public class MyBot extends Bot
 	        	if (route.finished)
 	        	{
 	        		// Route is afgelopen
-	        		i.remove();
+	        		inactiveRoutes.add(route);
 	        		
 	        		// Route is al klaar, mier is weer beschikbaar
 	        		availableAnts.add(route.getCurrentLocation());
@@ -131,8 +136,17 @@ public class MyBot extends Bot
 	        	}
         	}
         }
+        
+        // Haal de routes uit de actieve lijst als ze inactief zijn
+        for (Route route : inactiveRoutes)
+        {
+        	activeRoutes.remove(route);
+        }
 	}
 	
+	/**
+     * Functie die map locaties en map objecten update
+     */
 	private void updateMap(Ants gameState)
     {
 		// Als dit de eerste ronde is, voeg dan alle locaties toe als te verkennen locaties
@@ -163,11 +177,7 @@ public class MyBot extends Bot
     }
     
     /**
-     * Functie die gegeven een lijst van Targets en van Ants routes zoekt en orders uitdeelt
-     * @param gameState
-     * @param availableAnts
-     * @param orderedAnts
-     * @param targetLocs
+     * Functie die gegeven een lijst van Targets routes zoekt en orders uitdeelt aan Ants
      */
     private void searchAndOrder(Ants gameState, Target target, Set<Tile> targetLocs, int maxOrders) 
     {
@@ -239,11 +249,9 @@ public class MyBot extends Bot
 	}
 	
 	/**
-     * Functie die gegeven een Ant en een Location een zet probeert te doen
-     * @param gameState
-     * @param myAnt
-     * @param location
-     */
+	 * Functie die gegeven een Ant en een Location een zet probeert te doen
+	 * @return <code>true</code> als zet gelukt is, <code>false</code> als zet niet gelukt is
+	 */
 	public boolean doMoveLocation(Ants gameState, Tile myAnt, Tile targetLocation) 
     {
     	// Haal de mogelijk directies op naar het doel
@@ -261,12 +269,10 @@ public class MyBot extends Bot
     	
 		return false;
 	}
-
+	
 	/**
      * Functie die gegeven een Ant en een Direction een zet probeert te doen
-     * @param gameState
-     * @param myAnt
-     * @param direction 
+     * @return <code>true</code> als zet gelukt is, <code>false</code> als zet niet gelukt is
      */
 	private boolean doMoveDirection(Ants gameState, Tile myAnt, Aim direction) 
 	{
@@ -289,9 +295,7 @@ public class MyBot extends Bot
 	}
 	
 	/**
-     * Main method executed by the game engine for starting the bot.
-     * @param args command line arguments
-     * @throws IOException if an I/O error occurs
+     * Main methode die uitgevoerd wordt door de engine om de bot te starten
      */
     public static void main(String[] args) throws IOException 
     {

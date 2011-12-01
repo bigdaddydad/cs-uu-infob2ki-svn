@@ -3,8 +3,15 @@ import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.PriorityQueue;
 
+/**
+ * Represents a route navigator.
+ */
 public class RouteFinder {
 	
+	/**
+     * Functie die de kortste route probeert te vinden tussen de gegeven start- en eindlocatie 
+     * @return kortste route als er een route is gevonden, <code>null</code> als er geen route is gevonden
+     */
 	public static Route getShortestRoute(Ants gameState, Target target, Tile startLoc, Tile targetLoc)
 	{
 		ArrayList<Tile> closedset = new ArrayList<Tile>();
@@ -59,6 +66,10 @@ public class RouteFinder {
 	    return null;
 	}
 	
+	/**
+     * Functie die gegeven een start- en eindlocatie een route reconstrueert
+     * @return de route van de startlocatie naar de eindlocatie
+     */
 	private static Route reconstructRoute(Target target, Tile startLoc, Tile targetLoc)
 	{
 		LinkedList<Tile> path = new LinkedList<Tile>();
@@ -73,6 +84,10 @@ public class RouteFinder {
 		return new Route(target, startLoc, targetLoc, path);
 	}
 	
+	/**
+     * Functie die de afstand schat tussen twee locaties op de map
+     * @return de geschatte afstand
+     */
 	private static int estimateDistance(Ants gameState, Tile t1, Tile t2)
 	{
 		int rowDelta = Math.abs(t1.getRow() - t2.getRow());
@@ -84,6 +99,10 @@ public class RouteFinder {
         return rowDelta + colDelta;
 	}
 	
+	/**
+     * Functie die gegeven een locatie de buurlocaties geeft
+     * @return lijst van buurlocaties
+     */
 	private static ArrayList<Tile> getNeighbors(Ants gameState, Tile t)
 	{
 		ArrayList<Tile> result = new ArrayList<Tile>();

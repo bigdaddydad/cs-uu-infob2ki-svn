@@ -71,6 +71,9 @@ public class Route implements Comparable<Route> {
         return "route " + currentLoc.toString() + " to " + targetLoc.toString();
     }
     
+    /**
+     * Functie die de volgende stap in de route probeert te doen 
+     */
 	public void doStep(Ants gameState, MyBot bot) 
 	{
 		if (path.isEmpty())
