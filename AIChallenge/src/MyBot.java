@@ -17,6 +17,7 @@ public class MyBot extends Bot
 	private Set<Tile> availableAnts = new HashSet<Tile>();
 	private HashMap<Tile,Tile> reservedTiles = new HashMap<Tile,Tile>();
 	private LinkedList<Route> activeRoutes = new LinkedList<Route>();
+	private Set<Tile> enemyHills = new HashSet<Tile>();
 	private Set<Tile> unseenTiles;
 	
     /**
@@ -49,7 +50,7 @@ public class MyBot extends Bot
             reservedTiles.put(myAnt, null);
         }
         
-        // Update de te verkennen map
+        // Update de te verkennen map en de objecten op de map
         updateMap(gameState);
         
         /** - Geef alle mieren orders */
@@ -60,30 +61,28 @@ public class MyBot extends Bot
         updateRoutes(gameState);
         
         // Zoek naar eten
-	    searchAndOrder(gameState, Target.FOOD, gameState.getFoodTiles(), 2);  
+	    searchAndOrder(gameState, Target.FOOD, gameState.getFoodTiles(), 2);          
 	    
 	    // Verken de map
-	    searchAndOrder(gameState, Target.LAND, unseenTiles, 2); 
-	    
-	    // Verdedig eigen mierenhopen
-	    searchAndOrder(gameState, Target.MY_HILL, gameState.getMyHills(), 2);
-	    
-	    // Val vijandelijke mieren aan
-	    searchAndOrder(gameState, Target.ENEMY_ANT, gameState.getEnemyAnts(), 2);          
+	    searchAndOrder(gameState, Target.LAND, unseenTiles, 2);
 	    
 	    // Val vijandelijke mierenhopen aan
-	    searchAndOrder(gameState, Target.ENEMY_HILL, gameState.getEnemyHills(), 2);
+	    searchAndOrder(gameState, Target.ENEMY_HILL, enemyHills, 2);
+	    
+	    // Val vijandelijke mieren aan
+	    //searchAndOrder(gameState, Target.ENEMY_ANT, gameState.getEnemyAnts(), 2);
+	    
+	    // Verdedig eigen mierenhopen
+	    //searchAndOrder(gameState, Target.MY_HILL, gameState.getMyHills(), 2); 
     }
     
 	private void updateRoutes(Ants gameState) 
 	{
-		// Lijst van routes die klaar zijn
-        LinkedList<Route> finishedRoutes = new LinkedList<Route>();
-        
         // Voer alle actieve routes uit
-        for (Route route : activeRoutes)
+        for (Iterator<Route> i = activeRoutes.iterator(); i.hasNext();)
         {
-        	boolean inActive;
+        	Route route = i.next();
+        	boolean inActive = false;
         	
         	if (!availableAnts.contains(route.getCurrentLocation()))
         	{
@@ -98,18 +97,14 @@ public class MyBot extends Bot
 	        	switch (route.getTarget()) 
 	        	{
 		            case FOOD: inActive = !gameState.getFoodTiles().contains(targetLoc); break;
-		            case MY_HILL: inActive = !gameState.getMyHills().contains(targetLoc); break;
-		            case ENEMY_HILL: inActive = !gameState.getEnemyHills().contains(targetLoc); break;
-		            case ENEMY_ANT: inActive = !gameState.getEnemyAnts().contains(targetLoc); break;
-		            case LAND: inActive = !unseenTiles.contains(targetLoc); break;
-		            default: inActive = false;
+		            case ENEMY_HILL: inActive = !enemyHills.contains(targetLoc); break;
 		        }
         	}
         	
         	if (inActive)
         	{
         		// Haal route uit actieve lijst als deze inactief is geworden
-        		finishedRoutes.add(route);
+        		i.remove();
         	}
         	else
         	{
@@ -124,7 +119,7 @@ public class MyBot extends Bot
 	        	if (route.finished)
 	        	{
 	        		// Route is afgelopen
-	        		finishedRoutes.add(route);
+	        		i.remove();
 	        		
 	        		// Route is al klaar, mier is weer beschikbaar
 	        		availableAnts.add(route.getCurrentLocation());
@@ -136,17 +131,11 @@ public class MyBot extends Bot
 	        	}
         	}
         }
-        
-        // Haal de routes uit de actieve lijst als ze klaar zijn
-        for (Route route : finishedRoutes)
-        {
-        	activeRoutes.remove(route);
-        }
 	}
 	
 	private void updateMap(Ants gameState)
     {
-    	// Als we in de eerste ronde zitten, voeg dan alle locaties toe aan de te verkennen map
+		// Als dit de eerste ronde is, voeg dan alle locaties toe als te verkennen locaties
         if (unseenTiles == null) 
 		{
             unseenTiles = new HashSet<Tile>();
@@ -155,17 +144,22 @@ public class MyBot extends Bot
                 for (int col = 0; col < gameState.getCols(); col++)
                     unseenTiles.add(new Tile(row, col));
         }
-        
-        Iterator<Tile> locIter = unseenTiles.iterator();
 		
         // Verwijder alle zichtbare locaties van de te verkennen map
-        while (locIter.hasNext()) 
+        for (Iterator<Tile> i = unseenTiles.iterator(); i.hasNext();) 
 		{
-            Tile next = locIter.next();
+            Tile next = i.next();
             
 			if (gameState.isVisible(next))
-                locIter.remove();
+                i.remove();
         }
+        
+        // Voeg nieuw ontdekte vijandige mierenhopen toe
+        for (Tile hill : gameState.getEnemyHills())
+        {
+        	if (!enemyHills.contains(hill))
+        		enemyHills.add(hill);
+        }		
     }
     
     /**
@@ -223,7 +217,7 @@ public class MyBot extends Bot
             if (   !targetTiles.containsKey(route.getTargetLocation())      // Als target nog niet getarget is
                 && !targetTiles.containsValue(route.getCurrentLocation()))	// Als de mier nog geen doel heeft
             {
-
+            	
             	// Voeg de route aan de lijst toe
             	activeRoutes.add(route);
             	
