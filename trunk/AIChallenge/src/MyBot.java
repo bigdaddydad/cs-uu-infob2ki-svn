@@ -53,10 +53,10 @@ public class MyBot extends Bot
         // Update de te verkennen map en de objecten op de map
         updateMap(gameState);
         
-        /** - Geef alle mieren orders */
+        /** - Geef alle mieren orders - */
         
         // Voer active routes uit, en haal routes die zijn afgelopen weg
-        updateRoutes(activeRoutes,gameState);
+        updateRoutes(gameState, activeRoutes);
         
         // Zoek naar eten
         searchAndOrder(gameState, Target.FOOD, gameState.getFoodTiles(), 5);          
@@ -65,13 +65,16 @@ public class MyBot extends Bot
 	    searchAndOrder(gameState, Target.ENEMY_HILL, enemyHills, 10);
 	    
 	    // Kies een paar vakjes om te verkennen
-	    Set<Tile> unseenTilesSelection = pickTiles(unseenTiles,20);
+	    Set<Tile> unseenTilesSelection = pickTiles(unseenTiles, 20);
 	    
 	    // Verken de map
 	    searchAndOrder(gameState, Target.LAND, unseenTilesSelection, 20);
-
     }
     
+    /**
+     * Functie die een aantal random Tiles pakt uit de meegegeven lijst van Tiles
+     * @return lijst met <code>i</code> aantal random geselecteerde Tiles
+     */
     private Set<Tile> pickTiles(Set<Tile> tiles, int i) 
     {
     	if(tiles.isEmpty())
@@ -94,12 +97,11 @@ public class MyBot extends Bot
 		
 		return pickedTiles;
 	}
-
+    
 	/**
-     * Functie die alle actieve routes update
-     * @param routes 
+     * Functie die alle actieve routes update 
      */
-	private void updateRoutes(LinkedList<Route> routes, Ants gameState) 
+	private void updateRoutes(Ants gameState, LinkedList<Route> routes) 
 	{
 		// Lijst van routes die inactief zijn
         LinkedList<Route> inactiveRoutes = new LinkedList<Route>();
@@ -136,12 +138,10 @@ public class MyBot extends Bot
 	        	// Mier is bezig met route
 	        	availableAnts.remove(route.getCurrentLocation());
 	        	
-	        	//System.out.println("executing route "+route.toString());
-	        	
 	        	// Probeer een zet
 	        	route.doStep(gameState, this);
 	        	
-	        	if (route.finished)
+	        	if (route.isFinished())
 	        	{
 	        		// Route is afgelopen
 	        		inactiveRoutes.add(route);
@@ -248,21 +248,20 @@ public class MyBot extends Bot
             if (   !targetTiles.containsKey(route.getTargetLocation())      // Als target nog niet getarget is
                 && !targetTiles.containsValue(route.getCurrentLocation()))	// Als de mier nog geen doel heeft
             {
-            	
             	// Voeg de route aan de lijsten toe
             	activeRoutes.add(route);
             	newOrders.add(route);
-
+            	
             	// Maak de connectie tussen mier en target
             	targetTiles.put(route.getTargetLocation(), route.getCurrentLocation());
-    
+            	
             	// Deze mier heeft nu een order
             	orders ++;
             }   
         } 
         
         // Voer de nieuwe orders uit
-        updateRoutes(newOrders, gameState);
+        updateRoutes(gameState, newOrders);
 	}
 	
 	/**

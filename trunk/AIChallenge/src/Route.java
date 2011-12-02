@@ -11,7 +11,7 @@ public class Route implements Comparable<Route> {
     private final Tile targetLoc;
     private final LinkedList<Tile> path;
     private final int distance;
-    public boolean finished = false;
+    private boolean finished = false;
     
     public Route(Target target, Tile startLoc, Tile targetLoc, LinkedList<Tile> path) {
         this.target = target;
@@ -46,6 +46,10 @@ public class Route implements Comparable<Route> {
         return path.size();
     }
     
+    public boolean isFinished() {
+    	return finished;
+    }
+    
     @Override
     public int compareTo(Route route) {
         return distance - route.distance;
@@ -53,7 +57,7 @@ public class Route implements Comparable<Route> {
     
     @Override
     public int hashCode() {
-        return currentLoc.hashCode() * Ants.MAX_MAP_SIZE * Ants.MAX_MAP_SIZE + targetLoc.hashCode();
+        return startLoc.hashCode() * Ants.MAX_MAP_SIZE * Ants.MAX_MAP_SIZE + targetLoc.hashCode();
     }
     
     @Override
@@ -61,14 +65,14 @@ public class Route implements Comparable<Route> {
         boolean result = false;
         if (o instanceof Route) {
             Route route = (Route)o;
-            result = currentLoc.equals(route.currentLoc) && targetLoc.equals(route.targetLoc);
+            result = startLoc.equals(route.startLoc) && targetLoc.equals(route.targetLoc);
         }
         return result;
     }
     
     @Override
     public String toString() {
-        return "route " + currentLoc.toString() + " to " + targetLoc.toString();
+        return "route " + startLoc.toString() + " to " + targetLoc.toString();
     }
     
     /**

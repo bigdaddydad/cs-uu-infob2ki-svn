@@ -2,14 +2,15 @@
  * Represents a tile of the game map.
  */
 public class Tile implements Comparable<Tile> {
-    
-	public Tile parent;
-	public int g_score;
-	public int h_score;
-	public int f_score;
-	
 	private final int row;
-    private final int col;
+    
+	private final int col;
+	
+	/** Variables used by RouteFinder. */
+	public Tile parent;	 // Link naar de parent locatie
+	public int g_score;  // Werkelijke afstand van start locatie naar huidige locatie
+	public int h_score;  // Geschatte afstand van huidige locatie naar eind locatie
+	public int f_score;  // Som van de g en h score, totale afstand van begin naar eind locatie
     
     /**
      * Creates new {@link Tile} object.
