@@ -4,19 +4,18 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
-import java.util.TreeSet;
 
 /**
  * Bot implementation.
  */
 public class MyBot extends Bot 
 {
+	private List<Route> activeRoutes = new ArrayList<Route>();
 	private Set<Tile> availableAnts = new HashSet<Tile>();
-	private HashMap<Tile,Tile> reservedTiles = new HashMap<Tile,Tile>();
-	private LinkedList<Route> activeRoutes = new LinkedList<Route>();
+	private Set<Tile> reservedTiles = new HashSet<Tile>();
 	private Set<Tile> enemyHills = new HashSet<Tile>();
 	private Set<Tile> unseenTiles;
 	
@@ -40,14 +39,14 @@ public class MyBot extends Bot
         // Reserveer de eigen mierenhopen als niet-toegangbare locaties
         for (Tile myHill : gameState.getMyHills()) 
         {
-            reservedTiles.put(myHill, null);
+            reservedTiles.add(myHill);
         }
         
         // Reserveer eigen mierlocaties als niet-toegangbare locaties
         for (Tile myAnt : gameState.getMyAnts()) 
         {
         	availableAnts.add(myAnt);
-            reservedTiles.put(myAnt, null);
+            reservedTiles.add(myAnt);
         }
         
         // Update de te verkennen map en de objecten op de map
@@ -101,14 +100,12 @@ public class MyBot extends Bot
 	/**
      * Functie die alle actieve routes update 
      */
-	private void updateRoutes(Ants gameState, LinkedList<Route> routes) 
+	private void updateRoutes(Ants gameState, List<Route> routes) 
 	{
-		// Lijst van routes die inactief zijn
-        LinkedList<Route> inactiveRoutes = new LinkedList<Route>();
-        
-        // Voer alle actieve routes uit
-        for (Route route : routes)
+        // Voer alle meegegeven routes uit
+        for (Iterator<Route> i = routes.iterator(); i.hasNext();) 
         {
+        	Route route = i.next();
         	boolean inactive = false;
         	
         	if (!availableAnts.contains(route.getCurrentLocation()))
@@ -131,7 +128,7 @@ public class MyBot extends Bot
         	if (inactive)
         	{
         		// Route is inactief geworden
-        		inactiveRoutes.add(route);
+        		i.remove();
         	}
         	else
         	{
@@ -144,7 +141,7 @@ public class MyBot extends Bot
 	        	if (route.isFinished())
 	        	{
 	        		// Route is afgelopen
-	        		inactiveRoutes.add(route);
+	        		i.remove();
 	        		
 	        		// Route is al klaar, mier is weer beschikbaar
 	        		availableAnts.add(route.getCurrentLocation());
@@ -152,15 +149,9 @@ public class MyBot extends Bot
 	        	else
 	        	{
 	        		// Reserveer de positie van de target
-	        		reservedTiles.put(route.getTargetLocation(), route.getCurrentLocation());      	
+	        		reservedTiles.add(route.getTargetLocation());      	
 	        	}
         	}
-        }
-        
-        // Haal de routes uit de actieve lijst als ze inactief zijn
-        for (Route route : inactiveRoutes)
-        {
-        	routes.remove(route);
         }
 	}
 	
@@ -173,18 +164,18 @@ public class MyBot extends Bot
         if (unseenTiles == null) 
 		{
             unseenTiles = new HashSet<Tile>();
-			
+            
             for (int row = 0; row < gameState.getRows(); row++)
-                for (int col = 0; col < gameState.getCols(); col++)
-                    unseenTiles.add(new Tile(row, col));
-        }
+            	for (int col = 0; col < gameState.getCols(); col++)
+            		unseenTiles.add(new Tile(row, col));
+		}
 		
-        // Verwijder alle zichtbare locaties van de te verkennen map
+        // Verwijder alle zichtbare en water locaties van de te verkennen map
         for (Iterator<Tile> i = unseenTiles.iterator(); i.hasNext();) 
 		{
             Tile next = i.next();
             
-			if (gameState.isVisible(next))
+			if (gameState.isVisible(next) || !gameState.getIlk(next).isPassable())
                 i.remove();
         }
         
@@ -202,20 +193,17 @@ public class MyBot extends Bot
     private void searchAndOrder(Ants gameState, Target target, Set<Tile> targetLocs, int maxOrders) 
     {
     	// Targets die al als doel worden gebruikt
-    	HashMap<Tile,Tile> targetTiles = new HashMap<Tile,Tile>();
+    	Map<Tile,Tile> targetTiles = new HashMap<Tile,Tile>();
     	
     	 // Lijst van gevonden routes
         List<Route> routes = new ArrayList<Route>();
         
-        // Lijst van alle targets
-        TreeSet<Tile> sortedTargets = new TreeSet<Tile>(targetLocs);
-        
         /** - Zoek routes - */ 
         
         // Vind alle routes tussen mieren en targets
-        for (Tile targetLoc : sortedTargets) 
+        for (Tile targetLoc : targetLocs) 
         {
-        	if(!reservedTiles.containsKey(targetLoc))
+        	if (!reservedTiles.contains(targetLoc))
         	{
                 for (Tile ant : availableAnts)
                 {
@@ -225,6 +213,8 @@ public class MyBot extends Bot
                 	// Als er een route gevonden is, voeg deze dan toe aan lijst van routes
                 	if (route != null)
                 		routes.add(route);
+                	else
+                		System.out.println("geen route gevonden");
                 }
         	}
         }
@@ -237,7 +227,7 @@ public class MyBot extends Bot
         int orders = 0;
         
         // Nieuw gevonden routes/orders
-        LinkedList<Route> newOrders = new LinkedList<Route>();
+        List<Route> newOrders = new ArrayList<Route>();
         
         // Deel aan de hand van de gevonden routes orders uit
         for (Route route : routes) 
@@ -256,7 +246,7 @@ public class MyBot extends Bot
             	targetTiles.put(route.getTargetLocation(), route.getCurrentLocation());
             	
             	// Deze mier heeft nu een order
-            	orders ++;
+            	orders++;
             }   
         } 
         
@@ -293,13 +283,13 @@ public class MyBot extends Bot
 	private boolean doMoveDirection(Ants gameState, Tile myAnt, Aim direction) 
 	{
 		if (gameState.getIlk(myAnt, direction).isPassable() && 
-			!reservedTiles.containsKey(gameState.getTile(myAnt, direction))) 
+			!reservedTiles.contains(gameState.getTile(myAnt, direction))) 
         {
         	// Geef de order door aan het systeem
         	gameState.issueOrder(myAnt, direction);
         	
         	// Reserveer de nieuwe positie van de mier
-        	reservedTiles.put(gameState.getTile(myAnt, direction), myAnt);
+        	reservedTiles.add(gameState.getTile(myAnt, direction));
         	
         	// Maak de vorige positie van de mier vrij
         	reservedTiles.remove(myAnt);
