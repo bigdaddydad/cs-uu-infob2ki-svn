@@ -2,6 +2,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.PriorityQueue;
+import java.util.Set;
 
 /**
  * Represents a route navigator.
@@ -63,7 +64,7 @@ public class RouteFinder {
 			        y.f_score = y.g_score + y.h_score;
 			        openset.add(y);
 			    }
-			    else if (g_score < y.g_score)	// nieuwe g score is beter dan bestaande van buur
+			    else if (g_score < y.g_score)	// Nieuwe g score is beter dan bestaande van buur
 			    {
 			    	// Verwijder buur van queue, update parent en scores en voeg hem weer toe
 			    	openset.remove(y);
@@ -130,15 +131,20 @@ public class RouteFinder {
 		// Lijst met alle buurlocaties
 		ArrayList<Tile> result = new ArrayList<Tile>();
 		
-		// Voeg buurlocaties toe aan de lijst als ze toegankelijk zijn
-		if (gameState.getIlk(t, Aim.WEST).isPassable())
-			result.add(gameState.getTile(t, Aim.WEST));
-		if (gameState.getIlk(t, Aim.NORTH).isPassable())
-			result.add(gameState.getTile(t, Aim.NORTH));
-		if (gameState.getIlk(t, Aim.EAST).isPassable())
-			result.add(gameState.getTile(t, Aim.EAST));
-		if (gameState.getIlk(t, Aim.SOUTH).isPassable())
-			result.add(gameState.getTile(t, Aim.SOUTH));
+		// Lijst met alle directies
+		Aim[] directions = new Aim[] { Aim.WEST, Aim.EAST, Aim.NORTH, Aim.SOUTH };
+		
+		// Lijst met alle eigen mierenhopen
+		Set<Tile> myHills = gameState.getMyHills();
+		
+		// Loop alle directies langs en voeg toegankelijke buren toe aan de lijst
+		for (Aim direction : directions)
+		{
+			Tile neighbor = gameState.getTile(t, direction);
+			
+			if (gameState.getIlk(neighbor).isPassable() && !myHills.contains(neighbor))
+				result.add(neighbor);
+		}
 		
 		// Return de lijst van buurlocaties
 		return result;

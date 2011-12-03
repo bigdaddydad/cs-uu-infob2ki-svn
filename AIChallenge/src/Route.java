@@ -86,8 +86,7 @@ public class Route implements Comparable<Route> {
 		}
 		else if (bot.doMoveLocation(gameState, currentLoc, path.getFirst()))
 		{
-			currentLoc = path.getFirst();
-			path.removeFirst();
+			currentLoc = path.removeFirst();
 		}
 	}
 }
