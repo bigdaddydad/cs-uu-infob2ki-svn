@@ -58,10 +58,10 @@ public class MyBot extends Bot
         updateRoutes(gameState, activeRoutes);
         
         // Zoek naar eten
-        searchAndOrder(gameState, Target.FOOD, gameState.getFoodTiles(), 5);          
+        searchAndOrder(gameState, Target.FOOD, gameState.getFoodTiles(), 0);          
 	    
 	    // Val vijandelijke mierenhopen aan
-	    searchAndOrder(gameState, Target.ENEMY_HILL, enemyHills, 10);
+	    searchAndOrder(gameState, Target.ENEMY_HILL, enemyHills, 0);
 	    
 	    // Kies een paar vakjes om te verkennen
 	    Set<Tile> unseenTilesSelection = pickTiles(unseenTiles, 20);
@@ -149,7 +149,7 @@ public class MyBot extends Bot
 	        	else
 	        	{
 	        		// Reserveer de positie van de target
-	        		reservedTiles.add(route.getTargetLocation());      	
+	        		//reservedTiles.add(route.getTargetLocation());      	
 	        	}
         	}
         }
@@ -213,8 +213,6 @@ public class MyBot extends Bot
                 	// Als er een route gevonden is, voeg deze dan toe aan lijst van routes
                 	if (route != null)
                 		routes.add(route);
-                	else
-                		System.out.println("geen route gevonden");
                 }
         	}
         }
@@ -232,7 +230,7 @@ public class MyBot extends Bot
         // Deel aan de hand van de gevonden routes orders uit
         for (Route route : routes) 
         {
-        	if(orders >= maxOrders)
+        	if(maxOrders != 0 && orders >= maxOrders)
             	break;
         	
             if (   !targetTiles.containsKey(route.getTargetLocation())      // Als target nog niet getarget is
@@ -243,7 +241,16 @@ public class MyBot extends Bot
             	newOrders.add(route);
             	
             	// Maak de connectie tussen mier en target
-            	targetTiles.put(route.getTargetLocation(), route.getCurrentLocation());
+            	// Als de target eten is, willen er er niet meer dan 1 mier op afsturen
+            	if(target == Target.FOOD)
+            	{
+            		targetTiles.put(route.getTargetLocation(), route.getCurrentLocation());
+            	}
+            	else
+            	{
+            		targetTiles.put(null, route.getCurrentLocation());
+            	}
+            		
             	
             	// Deze mier heeft nu een order
             	orders++;

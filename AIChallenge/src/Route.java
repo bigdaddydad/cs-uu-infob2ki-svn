@@ -80,7 +80,12 @@ public class Route implements Comparable<Route> {
      */
 	public void doStep(Ants gameState, MyBot bot) 
 	{
-		if (path.isEmpty())
+		if(path.isEmpty())
+		{
+			finished = true;
+		}
+		// Check of ons doel of volgende vakje water is
+		else if (isWater(path.getFirst(),gameState) || isWater(targetLoc,gameState))
 		{
 			finished = true;
 		}
@@ -88,5 +93,10 @@ public class Route implements Comparable<Route> {
 		{
 			currentLoc = path.removeFirst();
 		}
+	}
+	
+	private boolean isWater(Tile tile, Ants gameState)
+	{
+		return (gameState.isVisible(tile) && gameState.getIlk(tile) == Ilk.WATER);
 	}
 }
