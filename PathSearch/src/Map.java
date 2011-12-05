@@ -3,7 +3,7 @@ import java.util.ArrayList;
 public class Map {
 
 	private final int cols, rows;
-	private Tile[][] data;
+	private Tile[][] tiles;
 	private ArrayList<Tile> walls;
 	
 	public Map(int cols, int rows)
@@ -12,16 +12,16 @@ public class Map {
 		this.cols = cols;
 		
 		walls = new ArrayList<Tile>();
-		data = new Tile[rows][cols];
+		tiles = new Tile[rows][cols];
 		
 		for (int row = 0; row < rows; row++)
 			for (int col = 0; col < cols; col++)
-				data[col][row] = new Tile(row, col);
+				tiles[col][row] = new Tile(row, col);
 	}
 	
-	public Tile getData(int col, int row)
+	public Tile getLocation(int col, int row)
 	{
-		return data[col][row];
+		return tiles[col][row];
 	}
 	
 	public int getRows()
@@ -36,10 +36,10 @@ public class Map {
 	
 	public void addWall(int col, int row)
 	{
-		walls.add(data[col][row]);
+		walls.add(tiles[col][row]);
 	}
 	
-	public boolean isAccessible(Tile tile)
+	public boolean isPassable(Tile tile)
 	{
 		return walls.contains(tile) == false;
 	}

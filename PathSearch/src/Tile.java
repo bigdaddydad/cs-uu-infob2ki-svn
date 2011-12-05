@@ -1,13 +1,9 @@
 
 public class Tile {
 
-	private int row;
-	private int col;
-	
+	private final int row, col;
 	public Tile parent;
-	public int g_score;
-	public int h_score;
-	public int f_score;
+	public int g_score, h_score, f_score;
 	
 	public Tile(int row, int col)
 	{
@@ -25,12 +21,15 @@ public class Tile {
 		return col;
 	}
 	
-	public boolean equals(Object o) {
-        boolean result = false;
-        if (o instanceof Tile) {
+	@Override
+    public boolean equals(Object o) 
+	{
+        if (o instanceof Tile) 
+        {
             Tile tile = (Tile)o;
-            result = row == tile.row && col == tile.col;
+            return row == tile.row && col == tile.col;
         }
-        return result;
+        
+        return false;
     }
 }

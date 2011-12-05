@@ -2,15 +2,17 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
+
 import javax.swing.JPanel;
 
 public class Canvas extends JPanel implements Runnable {
 
 	private Map map;
-	private PathFinder pathFinder;
 	private Tile begin, end;
 	private final int size = 50;
-	private ArrayList<Tile> walkedPath = new ArrayList<Tile>();
+	private List<Tile> walkedPath = new ArrayList<Tile>();
 	
 	public Canvas(Map map, Tile begin, Tile end)
 	{
@@ -20,7 +22,6 @@ public class Canvas extends JPanel implements Runnable {
 		this.map = map;
 		this.begin = begin;
 		this.end = end;
-		pathFinder = new PathFinder(map);
 		
 		new Thread(this).start();
 	}
@@ -30,7 +31,7 @@ public class Canvas extends JPanel implements Runnable {
 		super.paintComponent(g);
 		
 		// draw grid
-		g.setColor(Color.BLACK);
+		g.setColor(Color.GRAY);
 		for (int row = 1; row < map.getRows(); row++)
 			g.drawLine(0, row * size, map.getCols() * size, row * size);
 		for (int col = 1; col < map.getCols(); col++)
@@ -53,11 +54,11 @@ public class Canvas extends JPanel implements Runnable {
 			g.fillOval(t.getCol() * size + size/4, t.getRow() * size + size/4, size/2, size/2);
     }
 	
-	public void run() 
+	public void run()
 	{
-		ArrayList<Tile> shortestPath;
+		LinkedList<Tile> shortestPath = PathFinder.shortestPath(begin, end, map);
 		
-		while ((shortestPath = pathFinder.shortestPath(begin, end)).size() > 0)
+		while (shortestPath.size() > 0)
 		{
 			try {
 				Thread.sleep(1000);
@@ -66,7 +67,7 @@ public class Canvas extends JPanel implements Runnable {
 			}	
 			
 			walkedPath.add(begin);
-			begin = shortestPath.get(shortestPath.size()-1);
+			begin = shortestPath.removeFirst();
 			repaint();
 		}
 	}
