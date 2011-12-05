@@ -32,11 +32,20 @@ public class RouteFinder {
 		startLoc.f_score = startLoc.g_score + startLoc.h_score;
 		openset.add(startLoc);
 		
+		// Limit aan het aantal stappen dat het algoritme mag zoeken
+		int limit = 1000;
+		
 		// Voer algoritme uit zolang de queue niet leeg is
 	    while (!openset.isEmpty())
 	    {
 	    	// Haal het voorste element uit de queue
 	    	Tile x = openset.remove();
+	    	
+	    	// Als het limiet is bereikt, maak dan een route naar het best gevonden vakje
+	    	if(limit < 1)
+	    		return reconstructRoute(target, startLoc, x);	
+	    	else
+	    		limit--;
 	    	
 	    	// Als dit element de eind locatie is, return dan de gevonden route
 			if (x.equals(targetLoc))

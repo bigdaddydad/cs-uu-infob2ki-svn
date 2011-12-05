@@ -18,7 +18,6 @@ public class MyBot extends Bot
 	private Set<Tile> reservedTiles = new HashSet<Tile>();
 	private Set<Tile> enemyHills = new HashSet<Tile>();
 	private Set<Tile> unseenTiles;
-	
     /**
      * Functie die iedere ronde wordt uitgevoerd
      */
@@ -64,13 +63,51 @@ public class MyBot extends Bot
 	    searchAndOrder(gameState, Target.ENEMY_HILL, enemyHills, 0);
 	    
 	    // Kies een paar vakjes om te verkennen
-	    Set<Tile> unseenTilesSelection = pickTiles(unseenTiles, 20);
+	    Set<Tile> unseenTilesSelection = pickTiles(unseenTiles, 5);
 	    
 	    // Verken de map
-	    searchAndOrder(gameState, Target.LAND, unseenTilesSelection, 20);
+	    searchAndOrder(gameState, Target.LAND, unseenTilesSelection, 5);
+	    
+	    // Deblokkeer eigen heuvels
+	    unblockHills(gameState);
     }
     
-    /**
+    private void unblockHills(Ants gameState) 
+    {
+    	List<Route> newRoutes = new ArrayList<Route>();
+    	
+    	 for (Tile myHill : gameState.getMyHills()) 
+         {
+             if(gameState.getIlk(myHill) == Ilk.MY_ANT)
+             {
+            	 Tile randomTile = new Tile((int)((float)gameState.getCols()*Math.random()),(int)((float)gameState.getRows()*Math.random()));
+                	 
+                // Vind de kortste route tussen mieren en target
+            	Route route = RouteFinder.getShortestRoute(gameState, Target.LAND, myHill, randomTile);
+
+            	if(route == null)
+            	{
+            		for(Aim direction : Aim.values())
+            		{
+            			if(doMoveDirection(gameState,myHill,direction));
+            				break;
+            		}
+            		
+            	}
+            	else
+            	{
+            		// Voeg toe aan de lijsten
+                 	activeRoutes.add(route);
+                 	newRoutes.add(route);
+            	}
+             	
+             }
+         }
+
+		updateRoutes(gameState,newRoutes);
+	}
+
+	/**
      * Functie die een aantal random Tiles pakt uit de meegegeven lijst van Tiles
      * @return lijst met <code>i</code> aantal random geselecteerde Tiles
      */
@@ -200,13 +237,25 @@ public class MyBot extends Bot
         
         /** - Zoek routes - */ 
         
+        // Limit aan het aantal routes dat er gemaakt mag worden
+        int limit = 10;
+        
         // Vind alle routes tussen mieren en targets
         for (Tile targetLoc : targetLocs) 
         {
+        	if(limit < 1)
+        		break;
+        	
         	if (!reservedTiles.contains(targetLoc))
         	{
                 for (Tile ant : availableAnts)
                 {
+                	if(limit < 1)
+                		break;
+                	
+                	// Verlaag de limit
+                	limit--;
+                	
                 	// Vind de kortste route tussen mieren en target
                 	Route route = RouteFinder.getShortestRoute(gameState, target, ant, targetLoc);
                 	
@@ -287,7 +336,7 @@ public class MyBot extends Bot
      * Functie die gegeven een Ant en een Direction een zet probeert te doen
      * @return <code>true</code> als zet gelukt is, <code>false</code> als zet niet gelukt is
      */
-	private boolean doMoveDirection(Ants gameState, Tile myAnt, Aim direction) 
+	public boolean doMoveDirection(Ants gameState, Tile myAnt, Aim direction) 
 	{
 		if (gameState.getIlk(myAnt, direction).isPassable() && 
 			!reservedTiles.contains(gameState.getTile(myAnt, direction))) 
@@ -303,10 +352,39 @@ public class MyBot extends Bot
         	
         	return true;
         }
+		else if(gameState.getIlk(myAnt, direction).isPassable())
+		{
+			// Switch de 2 mieren om
+			if(availableAnts.contains(gameState.getTile(myAnt, direction)))
+			{
+				// Geef de order door aan het systeem
+	        	gameState.issueOrder(myAnt, direction);
+	        	
+	        	// Geef de order door aan het systeem
+	        	gameState.issueOrder(gameState.getTile(myAnt, direction), switchDirection(direction));
+	        	
+	        	// Mier is niet meer beschikbaar
+	        	availableAnts.remove(gameState.getTile(myAnt, direction));	   
+	        	
+	        	return true;
+			}
+		}
 		
 		return false;
 	}
 	
+	private Aim switchDirection(Aim direction) 
+	{
+		if(direction == Aim.NORTH)
+			return Aim.SOUTH;
+		else if(direction == Aim.SOUTH)
+			return Aim.NORTH;
+		else if(direction == Aim.EAST)
+			return Aim.WEST;
+		else
+			return Aim.EAST;
+	}
+
 	/**
      * Main methode die uitgevoerd wordt door de engine om de bot te starten
      */

@@ -84,6 +84,7 @@ public class Route implements Comparable<Route> {
 		{
 			finished = true;
 		}
+		
 		// Check of ons doel of volgende vakje water is
 		else if (isWater(path.getFirst(),gameState) || isWater(targetLoc,gameState))
 		{
