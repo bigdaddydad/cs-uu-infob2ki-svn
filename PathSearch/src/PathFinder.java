@@ -29,7 +29,7 @@ public class PathFinder {
 			
 			closedset.add(x);
 			
-			for (Tile y : getNeighbors(x, map))
+			for (Tile y : map.getNeighbors(x))
 			{
 			    if (closedset.contains(y))
 			    	continue;
@@ -82,26 +82,5 @@ public class PathFinder {
         colDelta = Math.min(colDelta, map.getCols() - colDelta);
         
         return rowDelta + colDelta;
-	}
-	
-	private static ArrayList<Tile> getNeighbors(Tile t, Map map)
-	{
-		ArrayList<Tile> result = new ArrayList<Tile>();
-		Tile neighbor;
-		
-		for (int i = -1; i < 2; i += 2)
-		{
-			neighbor = map.getLocation((t.getCol() + i + map.getCols()) % map.getCols(), t.getRow());
-			
-			if (map.isPassable(neighbor))
-				result.add(neighbor);
-			
-			neighbor = map.getLocation(t.getCol(), (t.getRow() + i + map.getRows()) % map.getRows());
-			
-			if (map.isPassable(neighbor))
-				result.add(neighbor);
-		}	
-		
-		return result;
 	}
 }
