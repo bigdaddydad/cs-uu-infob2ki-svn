@@ -1,5 +1,5 @@
 
-public class Tile {
+public class Tile implements Comparable<Tile> {
 
 	private final int row, col;
 	public Tile parent;
@@ -20,6 +20,18 @@ public class Tile {
 	{
 		return col;
 	}
+	
+	@Override
+	public int hashCode()
+	{
+		return row * Map.MAX_MAP_SIZE + col;
+	}
+	
+	@Override
+    public int compareTo(Tile t) 
+	{
+        return hashCode() - t.hashCode();
+    }
 	
 	@Override
     public boolean equals(Object o) 

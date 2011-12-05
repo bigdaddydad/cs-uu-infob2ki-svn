@@ -1,27 +1,41 @@
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 public class Map {
 
-	private final int cols, rows;
-	private Tile[][] tiles;
-	private ArrayList<Tile> walls;
+	public final static int MAX_MAP_SIZE = 200;
+	private final int rows, cols;
+	private Set<Tile> walls = new HashSet<Tile>();
 	
-	public Map(int cols, int rows)
+	public Map(int rows, int cols)
 	{
 		this.rows = rows;
 		this.cols = cols;
-		
-		walls = new ArrayList<Tile>();
-		tiles = new Tile[rows][cols];
-		
-		for (int row = 0; row < rows; row++)
-			for (int col = 0; col < cols; col++)
-				tiles[col][row] = new Tile(row, col);
 	}
 	
-	public Tile getLocation(int col, int row)
+	public List<Tile> getNeighbors(Tile t)
 	{
-		return tiles[col][row];
+		List<Tile> result = new ArrayList<Tile>();
+		
+		for (int i = -1; i < 2; i += 2)
+		{
+			Tile neighbor = new Tile((t.getRow() + i + rows) % rows, t.getCol());
+			
+			if (isPassable(neighbor))
+				result.add(neighbor);
+		}
+		
+		for (int i = -1; i < 2; i += 2)
+		{
+			Tile neighbor = new Tile(t.getRow(), (t.getCol() + i + cols) % cols);
+			
+			if (isPassable(neighbor))
+				result.add(neighbor);
+		}
+		
+		return result;
 	}
 	
 	public int getRows()
@@ -36,7 +50,7 @@ public class Map {
 	
 	public void addWall(int col, int row)
 	{
-		walls.add(tiles[col][row]);
+		walls.add(new Tile(col, row));
 	}
 	
 	public boolean isPassable(Tile tile)
@@ -44,7 +58,7 @@ public class Map {
 		return walls.contains(tile) == false;
 	}
 	
-	public ArrayList<Tile> getWalls()
+	public Set<Tile> getWalls()
 	{
 		return walls;
 	}
