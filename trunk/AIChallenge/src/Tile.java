@@ -6,11 +6,9 @@ public class Tile implements Comparable<Tile> {
     
 	private final int col;
 	
-	/** Variables used by RouteFinder. */
-	public Tile parent;	 // Link naar de parent locatie
-	public int g_score;  // Werkelijke afstand van start locatie naar huidige locatie
-	public int h_score;  // Geschatte afstand van huidige locatie naar eind locatie
-	public int f_score;  // Som van de g en h score, totale afstand van begin naar eind locatie
+	/** Variables used by RouteFinder algorithm. */
+	public Tile parent;
+	public int g_score, h_score, f_score;
     
     /**
      * Creates new {@link Tile} object.
