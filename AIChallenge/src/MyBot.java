@@ -71,11 +71,6 @@ public class MyBot extends Bot
 	        		// Mier is weer beschikbaar
 	        		availableAnts.add(route.getCurrentLocation());
 	        	}
-	        	else if (route.getTarget() == Target.FOOD)
-	        	{
-	        		// Als de target food is, reserveer dan de locatie
-	        		gameState.setReserved(route.getTargetLocation(), true);
-	        	}
         	}
         }
 	}
