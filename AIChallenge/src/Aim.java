@@ -75,4 +75,18 @@ public enum Aim {
     public static Aim fromSymbol(char symbol) {
         return symbolLookup.get(symbol);
     }
+    
+    /**
+     * Returns the opposite direction.
+     * 
+     * @return direction opposite to this direction
+     */
+    public Aim getOpposite() {
+    	switch (symbol) {
+			case 'n': return Aim.SOUTH;
+			case 's': return Aim.NORTH;
+			case 'e': return Aim.WEST;
+			default: return Aim.EAST;
+    	}
+	}
 }
