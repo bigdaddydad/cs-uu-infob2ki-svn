@@ -61,7 +61,7 @@ public class RouteFinder {
 		startLoc.f_score = startLoc.g_score + startLoc.h_score;
 		
 		// Initialiseer een set waar locaties in komen te staan die afgerond zijn
-		ArrayList<Tile> closedset = new ArrayList<Tile>();
+		Set<Tile> closedset = new HashSet<Tile>();
 		
 		// Initialiseer een set waarbij de locatie met kleinste f score vooraan komt te staan
 		PriorityQueue<Tile> openset = new PriorityQueue<Tile>(startLoc.f_score, new Comparator<Tile>() {
@@ -79,13 +79,9 @@ public class RouteFinder {
 	    	// Haal het voorste element uit de queue
 	    	Tile x = openset.remove();
 	    	
-	    	// Als het limiet is bereikt, maak dan een route naar het best gevonden vakje
-	    	if (i == PATH_LIMIT)
-	    		return reconstructRoute(target, startLoc, x);	
-	    	
-	    	// Als dit element de eind locatie is, return dan de gevonden route
-			if (x.equals(targetLoc))
-				return reconstructRoute(target, startLoc, x);				
+	    	// Als limiet of eind locatie is bereikt, return dan de gevonden route
+	    	if (i == PATH_LIMIT || x.equals(targetLoc))
+	    		return reconstructRoute(target, startLoc, x);				
 			
 			// Voeg het element toe aan de set van tiles die afgerond zijn
 			closedset.add(x);
@@ -101,7 +97,7 @@ public class RouteFinder {
 			    int g_score = x.g_score + 1;
 			    
 			    // Bepaal parent en scores voor buur en voeg hem toe aan queue als hij
-			    // nog niet in de queue zit of als de g score beter is dan zijn bestaande
+			    // nog niet in de queue zit of als nieuwe g score beter is dan zijn bestaande
 			    if (!openset.contains(y) || g_score < y.g_score)
 			    {
 			    	openset.remove(y);
