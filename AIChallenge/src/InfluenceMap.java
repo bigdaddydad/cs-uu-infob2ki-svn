@@ -47,7 +47,7 @@ public class InfluenceMap {
 		}
 	}
 	
-	private static Set<Tile> getNeighbors(GameState gameState, Tile t)
+	private Set<Tile> getNeighbors(GameState gameState, Tile t)
 	{
 		// Lijst met alle buurlocaties
 		Set<Tile> neighbors = new HashSet<Tile>();
@@ -62,5 +62,10 @@ public class InfluenceMap {
 		}
 		
 		return neighbors;
+	}
+	
+	public int getValue(Tile t)
+	{
+		return map[t.getRow()][t.getCol()];
 	}
 }
