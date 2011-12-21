@@ -9,6 +9,9 @@ public class Tile implements Comparable<Tile> {
 	/** Variables used by RouteFinder algorithm. */
 	public Tile parent;
 	public int g_score, h_score, f_score;
+	
+	/** Variable used by InfluenceMap calculation */
+	public int depth;
     
     /**
      * Creates new {@link Tile} object.
