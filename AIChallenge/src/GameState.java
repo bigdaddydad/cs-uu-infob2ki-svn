@@ -13,6 +13,7 @@ public class GameState {
 	private Set<Tile> enemyHills = new HashSet<Tile>();
 	private Set<Tile> waterTiles = new HashSet<Tile>();
 	private Set<Tile> unseenTiles;
+	private InfluenceMap imap;
 	
 	/**
      * Functie die map locaties en map objecten update
@@ -64,6 +65,19 @@ public class GameState {
 			if (!ants.getIlk(t).isPassable())
 				waterTiles.add(t);
         }
+        
+        // Update de influence map
+        imap = new InfluenceMap(this, getEnemyAnts(), 10);
+        
+//        for(int x = 0; x < gameState.getRows(); x++)
+//        {
+//        	for(int y = 0; y < gameState.getCols(); y++)
+//            {
+//            	System.out.print(imap.map[x][y] + "");
+//            }
+//        	
+//        	System.out.println(" ");
+//        }
         
         return availableAnts;
     }
@@ -220,5 +234,10 @@ public class GameState {
 	public void issueOrder(Tile t, Aim direction) 
 	{
 		ants.issueOrder(t, direction);
+	}
+	
+	public int getInfluenceValue(Tile t)
+	{
+		return imap.getValue(t);
 	}
 }

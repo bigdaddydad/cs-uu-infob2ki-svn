@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.Set;
 
@@ -14,15 +15,17 @@ import java.util.Set;
  */
 public class RouteFinder {
 	
-	public final static int ROUTE_LIMIT = 10;
-	public final static int PATH_LIMIT = 1000;
+	private final static int ROUTE_LIMIT = 10;
+	private final static int PATH_LIMIT = 1000;
+	private final static int PATH_SAFETY = 2;
 	
-	public static List<Route> findRoutes(GameState gameState, Target target, Set<Tile> startLocs, Set<Tile> targetLocs, InfluenceMap imap)
+	public static List<Route> findRoutes(GameState gameState, Target target, Set<Tile> startLocs, Set<Tile> targetLocs)
 	{
 		// Lijst van gevonden routes
         List<Route> routes = new ArrayList<Route>();
         
-        Collection<Tile> safeLocs = getSafestLocations(targetLocs,imap,ROUTE_LIMIT);
+        // Lijst van veilige beginlocaties
+        Collection<Tile> safeLocs = getSafestLocations(gameState, targetLocs, ROUTE_LIMIT);
         
         // Vind alle routes tussen start- en eindlocaties
         for (Tile targetLoc : safeLocs) 
@@ -48,23 +51,23 @@ public class RouteFinder {
         return routes;
 	}
 	
-	private static Collection<Tile> getSafestLocations(Set<Tile> targetLocs,InfluenceMap imap, int routeLimit) 
+	private static Collection<Tile> getSafestLocations(GameState gameState, Set<Tile> targetLocs, int routeLimit) 
 	{
 		// De map met de veiligste routes
-		HashMap<Integer,Tile> safeTargets = new HashMap<Integer,Tile>();
+		Map<Integer,Tile> safeTargets = new HashMap<Integer,Tile>();
 		
-		// Hoeveel routes eral gekozen zijn
+		// Hoeveel routes er al gekozen zijn
 		int targets = 0;
 		
 		// Route met de meeste influence
 		int maxTarget = 0;
 		
-		for(Tile tile : targetLocs)
+		for (Tile tile : targetLocs)
 		{
-			int safeness = imap.getValue(tile);
+			int safeness = gameState.getInfluenceValue(tile);
 			
 			// Als er nog plek is voor meer routes
-			if(targets < routeLimit)
+			if (targets < routeLimit)
 			{
 				safeTargets.put(safeness, tile);
 				targets++;
@@ -78,7 +81,7 @@ public class RouteFinder {
 				// Als de verzameling vol is maar we hebben een
 				// tile met kleinere influence dan de grootste in
 				// de verzameling
-				if(safeness < maxTarget)
+				if (safeness < maxTarget)
 				{
 					// Haal de grootse eruit en doe de kleinere erin
 					safeTargets.remove(maxTarget);
@@ -88,18 +91,18 @@ public class RouteFinder {
 					maxTarget = 0;
 					
 					// Update de maxTarget
-					for(int i : safeTargets.keySet())
+					for (int i : safeTargets.keySet())
 					{
-						if(maxTarget < i)
+						if (maxTarget < i)
 							maxTarget = i;
 					}
 				}
 			}
 		}
-
+		
 		return safeTargets.values();
 	}
-
+	
 	/**
      * Functie die A* algoritme gebruikt om kortste route te vinden tussen gegeven start- en eindlocatie 
      * @return kortste route als er een route is gevonden, <code>null</code> als er geen route is gevonden
@@ -145,8 +148,8 @@ public class RouteFinder {
 			    if (closedset.contains(y))
 			    	continue;
 			    
-			    // Bepaal nieuwe g score
-			    int g_score = x.g_score + 1;
+			    // Bepaal nieuwe g score, waarbij we rekening houden met de influence
+			    int g_score = (x.g_score + 1) + (gameState.getInfluenceValue(y) * PATH_SAFETY);
 			    
 			    // Bepaal parent en scores voor buur en voeg hem toe aan queue als hij
 			    // nog niet in de queue zit of als nieuwe g score beter is dan zijn bestaande
