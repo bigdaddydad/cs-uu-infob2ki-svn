@@ -1,6 +1,8 @@
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -15,24 +17,22 @@ public class RouteFinder {
 	public final static int ROUTE_LIMIT = 10;
 	public final static int PATH_LIMIT = 1000;
 	
-	public static List<Route> findRoutes(GameState gameState, Target target, Set<Tile> startLocs, Set<Tile> targetLocs)
+	public static List<Route> findRoutes(GameState gameState, Target target, Set<Tile> startLocs, Set<Tile> targetLocs, InfluenceMap imap)
 	{
 		// Lijst van gevonden routes
         List<Route> routes = new ArrayList<Route>();
         
+        Collection<Tile> safeLocs = getSafestLocations(targetLocs,imap,ROUTE_LIMIT);
+        
         // Vind alle routes tussen start- en eindlocaties
-        search: for (Tile targetLoc : targetLocs) 
+        for (Tile targetLoc : safeLocs) 
         {
         	// Sla target over als hij al gereserveerd is
         	if (gameState.isReserved(targetLoc))
         		continue;
         	
             for (Tile startLoc : startLocs)
-            {
-            	// Stop met routes zoeken als het limiet bereikt is
-            	if (routes.size() >= ROUTE_LIMIT)
-            		break search;
-            	
+            {            	
             	// Vind de kortste route tussen mieren en target
             	Route route = findShortestRoute(gameState, target, startLoc, targetLoc);
             	
@@ -48,6 +48,58 @@ public class RouteFinder {
         return routes;
 	}
 	
+	private static Collection<Tile> getSafestLocations(Set<Tile> targetLocs,InfluenceMap imap, int routeLimit) 
+	{
+		// De map met de veiligste routes
+		HashMap<Integer,Tile> safeTargets = new HashMap<Integer,Tile>();
+		
+		// Hoeveel routes eral gekozen zijn
+		int targets = 0;
+		
+		// Route met de meeste influence
+		int maxTarget = 0;
+		
+		for(Tile tile : targetLocs)
+		{
+			int safeness = imap.getValue(tile);
+			
+			// Als er nog plek is voor meer routes
+			if(targets < routeLimit)
+			{
+				safeTargets.put(safeness, tile);
+				targets++;
+				
+				// Update de maxTarget
+				if(maxTarget < safeness)
+					maxTarget = safeness;
+			}
+			else
+			{
+				// Als de verzameling vol is maar we hebben een
+				// tile met kleinere influence dan de grootste in
+				// de verzameling
+				if(safeness < maxTarget)
+				{
+					// Haal de grootse eruit en doe de kleinere erin
+					safeTargets.remove(maxTarget);
+					safeTargets.put(safeness, tile);
+					
+					// Reset de maxTarget
+					maxTarget = 0;
+					
+					// Update de maxTarget
+					for(int i : safeTargets.keySet())
+					{
+						if(maxTarget < i)
+							maxTarget = i;
+					}
+				}
+			}
+		}
+
+		return safeTargets.values();
+	}
+
 	/**
      * Functie die A* algoritme gebruikt om kortste route te vinden tussen gegeven start- en eindlocatie 
      * @return kortste route als er een route is gevonden, <code>null</code> als er geen route is gevonden
