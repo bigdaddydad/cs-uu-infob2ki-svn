@@ -7,7 +7,7 @@ import java.util.Set;
  */
 public class InfluenceMap {
 
-	private int[][] map;
+	public int[][] map;
 	
 	public InfluenceMap(GameState gameState, Set<Tile> objects, int radius)
 	{

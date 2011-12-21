@@ -30,12 +30,25 @@ public class MyBot extends Bot
     	// Voer actieve routes uit en verwijder inactieve routes
         updateRoutes(activeRoutes);
     	
+        // Bereken de influence map
+        InfluenceMap imap = new InfluenceMap(gameState,gameState.getEnemyAnts(),10);
+        
+//        for(int x = 0; x < gameState.getRows(); x++)
+//        {
+//        	for(int y = 0; y < gameState.getCols(); y++)
+//            {
+//            	System.out.print(imap.map[x][y] + "");
+//            }
+//        	
+//        	System.out.println(" ");
+//        }
+
         // Bepaal de strategie
     	Strategy strategy = Strategy.DEFAULT;
-    	
+    	    	
     	// Voer strategie uit
     	for (Action action : strategy.getActions())
-    		searchAndOrder(action.getTarget(), action.getMaxAnts());
+    		searchAndOrder(action.getTarget(), action.getMaxAnts(),imap);
     	
 	    // Deblokkeer eigen heuvels
 	    unblockHills();
@@ -77,8 +90,9 @@ public class MyBot extends Bot
     
     /**
      * Functie die gegeven een type target routes zoekt en orders uitdeelt aan mieren
+     * @param imap 
      */
-    private void searchAndOrder(Target target, int maxOrders) 
+    private void searchAndOrder(Target target, int maxOrders, InfluenceMap imap) 
     {
     	// Lijst van target locaties
     	Set<Tile> targetLocs = new HashSet<Tile>();
@@ -92,7 +106,7 @@ public class MyBot extends Bot
 		}
     	
     	// Lijst van gevonden routes
-        List<Route> routes = RouteFinder.findRoutes(gameState, target, availableAnts, targetLocs); 
+        List<Route> routes = RouteFinder.findRoutes(gameState, target, availableAnts, targetLocs,imap); 
         
         // Sets van targets die al als doel worden gebruikt en mieren die al een order hebben
     	Set<Tile> targetedTiles = new HashSet<Tile>();
