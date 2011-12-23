@@ -7,7 +7,7 @@ import java.util.Set;
  */
 public class InfluenceMap {
 
-	public int[][] map;
+	private int[][] map;
 	
 	public InfluenceMap(GameState gameState, Set<Tile> objects, int radius)
 	{
@@ -32,7 +32,7 @@ public class InfluenceMap {
 		{
 			Tile x = queue.remove();
 			
-			for (Tile y : getNeighbors(gameState, x))
+			for (Tile y : gameState.getNeighbors(x))
 			{
 				if (!visited.contains(y))
 				{
@@ -47,25 +47,29 @@ public class InfluenceMap {
 		}
 	}
 	
-	private Set<Tile> getNeighbors(GameState gameState, Tile t)
-	{
-		// Lijst met alle buurlocaties
-		Set<Tile> neighbors = new HashSet<Tile>();
-		
-		// Loop alle directies langs en voeg toegankelijke buren toe aan de lijst
-		for (Aim direction : Aim.values())
-		{
-			Tile neighbor = gameState.getTile(t, direction);
-			
-			if (!gameState.isWater(neighbor))
-				neighbors.add(neighbor);
-		}
-		
-		return neighbors;
-	}
-	
 	public int getValue(Tile t)
 	{
 		return map[t.getRow()][t.getCol()];
 	}
+	
+	@Override
+    public String toString() 
+	{
+		String result = "";
+		
+		for (int[] row : map)
+		{
+			for (int value : row)
+			{
+				result += "| " + value + " ";
+				
+				if (value < 10)
+					result += " ";
+			}
+			
+			result += "|\n";
+		}
+		
+        return result;
+    }
 }

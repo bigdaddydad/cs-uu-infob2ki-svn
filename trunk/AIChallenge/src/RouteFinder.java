@@ -1,5 +1,4 @@
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -15,8 +14,8 @@ import java.util.Set;
  */
 public class RouteFinder {
 	
-	private final static int ROUTE_LIMIT = 10;
-	private final static int PATH_LIMIT = 1000;
+	private final static int TARGET_LIMIT = 100;
+	private final static int PATH_LIMIT = 10000;
 	private final static int PATH_SAFETY = 2;
 	
 	public static List<Route> findRoutes(GameState gameState, Target target, Set<Tile> startLocs, Set<Tile> targetLocs)
@@ -25,17 +24,13 @@ public class RouteFinder {
         List<Route> routes = new ArrayList<Route>();
         
         // Lijst van veilige beginlocaties
-        Collection<Tile> safeLocs = getSafestLocations(gameState, targetLocs, ROUTE_LIMIT);
+        Set<Tile> safeLocs = getSafestLocations(gameState, targetLocs);
         
         // Vind alle routes tussen start- en eindlocaties
         for (Tile targetLoc : safeLocs) 
         {
-        	// Sla target over als hij al gereserveerd is
-        	if (gameState.isReserved(targetLoc))
-        		continue;
-        	
             for (Tile startLoc : startLocs)
-            {            	
+            {
             	// Vind de kortste route tussen mieren en target
             	Route route = findShortestRoute(gameState, target, startLoc, targetLoc);
             	
@@ -51,56 +46,51 @@ public class RouteFinder {
         return routes;
 	}
 	
-	private static Collection<Tile> getSafestLocations(GameState gameState, Set<Tile> targetLocs, int routeLimit) 
+	private static Set<Tile> getSafestLocations(GameState gameState, Set<Tile> targetLocs) 
 	{
-		// De map met de veiligste routes
-		Map<Integer,Tile> safeTargets = new HashMap<Integer,Tile>();
+		// De map met de veiligste locaties
+		Map<Tile,Integer> safeTargets = new HashMap<Tile,Integer>();
 		
-		// Hoeveel routes er al gekozen zijn
-		int targets = 0;
-		
-		// Route met de meeste influence
-		int maxTarget = 0;
+		// Locatie met de meeste influence
+		Tile maxTarget = null;
 		
 		for (Tile tile : targetLocs)
 		{
-			int safeness = gameState.getInfluenceValue(tile);
+			int danger = gameState.getInfluenceValue(tile);
 			
-			// Als er nog plek is voor meer routes
-			if (targets < routeLimit)
+			// Als er nog plek is voor meer locaties
+			if (safeTargets.size() < TARGET_LIMIT)
 			{
-				safeTargets.put(safeness, tile);
-				targets++;
+				safeTargets.put(tile, danger);
 				
 				// Update de maxTarget
-				if(maxTarget < safeness)
-					maxTarget = safeness;
+				if (maxTarget == null || safeTargets.get(maxTarget) < danger)
+					maxTarget = tile;
 			}
 			else
 			{
-				// Als de verzameling vol is maar we hebben een
-				// tile met kleinere influence dan de grootste in
-				// de verzameling
-				if (safeness < maxTarget)
+				// Als de verzameling vol is maar we hebben een tile met kleinere 
+				// influence dan de grootste in de verzameling
+				if (danger < safeTargets.get(maxTarget))
 				{
 					// Haal de grootse eruit en doe de kleinere erin
 					safeTargets.remove(maxTarget);
-					safeTargets.put(safeness, tile);
+					safeTargets.put(tile, danger);
 					
 					// Reset de maxTarget
-					maxTarget = 0;
+					maxTarget = null;
 					
 					// Update de maxTarget
-					for (int i : safeTargets.keySet())
+					for (Tile t : safeTargets.keySet())
 					{
-						if (maxTarget < i)
-							maxTarget = i;
+						if (maxTarget == null || safeTargets.get(maxTarget) < safeTargets.get(t))
+							maxTarget = t;
 					}
 				}
 			}
 		}
 		
-		return safeTargets.values();
+		return safeTargets.keySet();
 	}
 	
 	/**
@@ -109,62 +99,69 @@ public class RouteFinder {
      */
 	public static Route findShortestRoute(GameState gameState, Target target, Tile startLoc, Tile targetLoc)
 	{
-		// Bepaal parent en scores voor start locatie
-		startLoc.parent = null;
-		startLoc.g_score = 0;
-		startLoc.h_score = estimateDistance(gameState, startLoc, targetLoc);
-		startLoc.f_score = startLoc.g_score + startLoc.h_score;
-		
-		// Initialiseer een set waar locaties in komen te staan die afgerond zijn
-		Set<Tile> closedset = new HashSet<Tile>();
-		
-		// Initialiseer een set waarbij de locatie met kleinste f score vooraan komt te staan
-		PriorityQueue<Tile> openset = new PriorityQueue<Tile>(startLoc.f_score, new Comparator<Tile>() {
-			public int compare(Tile t1, Tile t2) {
-				return t1.f_score - t2.f_score;
-			}
-		});
-		
-		// Voeg start locatie toe aan de queue
-		openset.add(startLoc);
-		
-		// Voer algoritme uit zolang de queue niet leeg is en het limiet niet bereikt is
-	    for (int i = 0; i <= PATH_LIMIT && !openset.isEmpty(); i++)
-	    {
-	    	// Haal het voorste element uit de queue
-	    	Tile x = openset.remove();
-	    	
-	    	// Als limiet of eind locatie is bereikt, return dan de gevonden route
-	    	if (i == PATH_LIMIT || x.equals(targetLoc))
-	    		return reconstructRoute(target, startLoc, x);				
+		if (!startLoc.equals(targetLoc))
+		{
+			// Bepaal parent en scores voor start locatie
+			startLoc.parent = null;
+			startLoc.g_score = 0;
+			startLoc.h_score = estimateDistance(gameState, startLoc, targetLoc);
+			startLoc.f_score = startLoc.g_score + startLoc.h_score;
 			
-			// Voeg het element toe aan de set van tiles die afgerond zijn
-			closedset.add(x);
+			// Initialiseer een set waar locaties in komen te staan die afgerond zijn
+			Set<Tile> closedset = new HashSet<Tile>();
 			
-			// Loop alle buurlocaties langs
-			for (Tile y : getNeighbors(gameState, x))
-			{
-				// Sla buurlocatie over als hij al afgerond is
-			    if (closedset.contains(y))
-			    	continue;
-			    
-			    // Bepaal nieuwe g score, waarbij we rekening houden met de influence
-			    int g_score = (x.g_score + 1) + (gameState.getInfluenceValue(y) * PATH_SAFETY);
-			    
-			    // Bepaal parent en scores voor buur en voeg hem toe aan queue als hij
-			    // nog niet in de queue zit of als nieuwe g score beter is dan zijn bestaande
-			    if (!openset.contains(y) || g_score < y.g_score)
-			    {
-			    	openset.remove(y);
-			    	y.parent = x;
-			        y.g_score = g_score;
-			        y.h_score = estimateDistance(gameState, y, targetLoc);
-			        y.f_score = y.g_score + y.h_score;
-			        openset.add(y);
-			    }
-			}
-	    }
-	    
+			// Initialiseer een set waarbij de locatie met kleinste f score vooraan komt te staan
+			PriorityQueue<Tile> openset = new PriorityQueue<Tile>(startLoc.f_score, new Comparator<Tile>() {
+				public int compare(Tile t1, Tile t2) {
+					return t1.f_score - t2.f_score;
+				}
+			});
+			
+			// Voeg start locatie toe aan de queue
+			openset.add(startLoc);
+			
+			// Voer algoritme uit zolang de queue niet leeg is en het limiet niet bereikt is
+		    for (int i = 0; i <= PATH_LIMIT && !openset.isEmpty(); i++)
+		    {
+		    	// Haal het voorste element uit de queue
+		    	Tile x = openset.remove();
+		    	
+		    	// Return gevonden route als eind locatie is bereikt
+		    	if (x.equals(targetLoc))
+		    		return reconstructRoute(target, startLoc, x);
+		    	
+		    	// Return gevonden route als limiet is bereikt
+		    	if (i == PATH_LIMIT)
+		    		return reconstructRoute(Target.LAND, startLoc, x);
+				
+				// Voeg het element toe aan de set van tiles die afgerond zijn
+				closedset.add(x);
+				
+				// Loop alle buurlocaties langs
+				for (Tile y : gameState.getNeighbors(x))
+				{
+					// Sla locatie over als hij al afgerond is
+				    if (closedset.contains(y))
+				    	continue;
+				    
+				    // Bepaal nieuwe g score waarbij we rekening houden met de influence
+				    int g_score = x.g_score + 1 + (gameState.getInfluenceValue(y) * PATH_SAFETY);
+				    
+				    // Bepaal parent en scores voor buur en voeg hem toe aan queue als hij
+				    // nog niet in de queue zit of als nieuwe g score beter is dan zijn bestaande
+				    if (!openset.contains(y) || g_score < y.g_score)
+				    {
+				    	openset.remove(y);
+				    	y.parent = x;
+				        y.g_score = g_score;
+				        y.h_score = estimateDistance(gameState, y, targetLoc);
+				        y.f_score = y.g_score + y.h_score;
+				        openset.add(y);
+				    }
+				}
+		    }
+		}
+		
 	    // Return null als er geen route is gevonden
 	    return null;
 	}
@@ -196,7 +193,7 @@ public class RouteFinder {
      * Functie die de afstand schat tussen twee locaties op de map
      * @return de geschatte afstand
      */
-	private static int estimateDistance(GameState gameState, Tile t1, Tile t2)
+	public static int estimateDistance(GameState gameState, Tile t1, Tile t2)
 	{
 		// Bereken het verschil in rijen en kolommen
 		int rowDelta = Math.abs(t1.getRow() - t2.getRow());
@@ -208,26 +205,5 @@ public class RouteFinder {
         
         // Return als geschatte afstand de som van het aantal rijen en kolommen
         return rowDelta + colDelta;
-	}
-	
-	/**
-     * Functie die gegeven een locatie de buurlocaties geeft
-     * @return lijst van buurlocaties
-     */
-	private static Set<Tile> getNeighbors(GameState gameState, Tile t)
-	{
-		// Lijst met alle buurlocaties
-		Set<Tile> neighbors = new HashSet<Tile>();
-		
-		// Loop alle directies langs en voeg toegankelijke buren toe aan de lijst
-		for (Aim direction : Aim.values())
-		{
-			Tile neighbor = gameState.getTile(t, direction);
-			
-			if (!gameState.isWater(neighbor) && !gameState.isMyHill(neighbor))
-				neighbors.add(neighbor);
-		}
-		
-		return neighbors;
 	}
 }

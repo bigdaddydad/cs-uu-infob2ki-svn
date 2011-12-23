@@ -1,13 +1,15 @@
-
+/**
+ * Represents a subgoal of a strategy.
+ */
 public class Action {
 	
 	private final Target target;
-	private final int maxAnts;
+	private final double antRate;
 	
-	public Action(Target target, int maxAnts)
+	public Action(Target target, double antRate)
 	{
 		this.target = target;
-		this.maxAnts = maxAnts;
+		this.antRate = antRate;
 	}
 	
 	public Target getTarget()
@@ -15,8 +17,8 @@ public class Action {
 		return target;
 	}
 	
-	public int getMaxAnts()
+	public double getAntRate()
 	{
-		return maxAnts;
+		return antRate;
 	}
 }
