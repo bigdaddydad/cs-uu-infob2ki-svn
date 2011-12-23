@@ -13,6 +13,8 @@ public class MyBot extends Bot
 	private GameState gameState = new GameState();
 	private List<Route> activeRoutes = new ArrayList<Route>();
 	private Set<Tile> availableAnts;
+	private boolean forceStrategy;
+	private Strategy strategy;
     
     /**
      * Functie die iedere ronde wordt uitgevoerd
@@ -24,21 +26,76 @@ public class MyBot extends Bot
     	
         // Update game state
     	availableAnts = gameState.update(getAnts());
-        
+    	
+    	// Update de strategie
+    	updateStrategy();
+    	
         /** - Geef alle mieren orders - */
         
-    	// Voer actieve routes uit en verwijder inactieve routes
-        updateRoutes(activeRoutes);
-
-        // Bepaal de strategie
-    	Strategy strategy = Strategy.DEFAULT;
-    	    	
+    	if (forceStrategy)
+    	{
+    		// Verwijder alle huidige routes als een nieuwe strategie geforceerd wordt
+    		activeRoutes.clear();
+    	}
+    	else
+    	{
+    		// Voer actieve routes uit en verwijder inactieve routes
+    		updateRoutes(activeRoutes);
+    	}
+    	
     	// Voer strategie uit
     	for (Action action : strategy.getActions())
-    		searchAndOrder(action.getTarget(), action.getMaxAnts());
+    		searchAndOrder(action.getTarget(), (int)(availableAnts.size() * action.getAntRate()));
     	
 	    // Deblokkeer eigen heuvels
 	    unblockHills();
+	    
+	    System.out.println("Huidige strategie: " + strategy.name());
+    }
+    
+    /**
+     * Functie die vanuit huidige situatie een strategie bepaalt
+     */
+    private void updateStrategy()
+    {
+    	Strategy newStrategy = Strategy.DEFAULT;
+    	forceStrategy = false;
+    	
+    	if (gameState.getEnemyHills().size() > 0)
+    	{
+    		if (gameState.getUnseenTiles().size() == 0 && gameState.getEnemyHills().size() == 1)
+    		{
+    			// Forceer aanvallen als dit de enige vijandige mierenhoop is die nog over is
+    			newStrategy = Strategy.ALL_OFFENSIVE;
+    		}
+    		else if (gameState.getEnemyHills(0, 4).size() > 0)
+    		{
+    			// Ga aanvallend spelen, val vijandige mierenhopen waar klein gevaar is aan
+        		newStrategy = Strategy.OFFENSIVE;
+    		}
+    	}
+    	if (gameState.getMyHills(1, 4).size() > 0)
+    	{
+    		// Ga verdedigend spelen, verdedig eigen mierenhopen waar klein gevaar is
+    		newStrategy = Strategy.DEFENSIVE;
+    	}
+    	if (gameState.getMyHills(5, -1).size() > 0)
+    	{
+    		// Forceer verdedigen bij eigen mierenhopen waar veel gevaar is
+    		newStrategy = Strategy.ALL_DEFENSIVE;
+    	}
+    	
+    	if (newStrategy != strategy)
+    	{
+    		// Forceer strategie als nieuwe of oude strategie geforceerd aanvallen of verdedigen is
+    		if (newStrategy == Strategy.ALL_DEFENSIVE || newStrategy == Strategy.ALL_OFFENSIVE
+    		    || strategy == Strategy.ALL_DEFENSIVE || strategy == Strategy.ALL_OFFENSIVE)
+    		{
+    			forceStrategy = true;
+    		}
+    	}
+    	
+    	strategy = newStrategy;
     }
     
 	/**
@@ -77,7 +134,6 @@ public class MyBot extends Bot
     
     /**
      * Functie die gegeven een type target routes zoekt en orders uitdeelt aan mieren
-     * @param imap 
      */
     private void searchAndOrder(Target target, int maxOrders) 
     {
@@ -88,8 +144,19 @@ public class MyBot extends Bot
     	switch (target)
 		{
 			case FOOD: targetLocs = gameState.getFoodTiles(); break;
-			case ENEMY_HILL: targetLocs = gameState.getEnemyHills(); break;
-			case LAND: targetLocs = gameState.getUnseenTiles(maxOrders);
+			case LAND: targetLocs = gameState.getUnseenTiles(maxOrders); break; 
+			case ENEMY_HILL: 
+				if (strategy == Strategy.ALL_OFFENSIVE)
+					targetLocs = gameState.getEnemyHills();
+				else
+					targetLocs = gameState.getEnemyHills(0, 4);
+				break;
+			case MY_HILL: 
+				if (strategy == Strategy.ALL_DEFENSIVE)
+					targetLocs = gameState.getMyHills(5, -1);
+				else
+					targetLocs = gameState.getMyHills(1, 4);
+				break;
 		}
     	
     	// Lijst van gevonden routes
@@ -106,8 +173,8 @@ public class MyBot extends Bot
         for (Route route : routes) 
         {
         	// Stop met orders uitdelen als limiet is bereikt
-        	if (maxOrders != 0 && orderedAnts.size() >= maxOrders)
-            	break;
+        	if (orderedAnts.size() >= maxOrders)
+        		break;
         	
             if (!targetedTiles.contains(route.getTargetLocation())	   // Als target nog niet getarget is
                 && !orderedAnts.contains(route.getCurrentLocation()))  // Als de mier nog geen doel heeft
@@ -123,7 +190,7 @@ public class MyBot extends Bot
             	// Deze mier heeft nu een order
             	orderedAnts.add(route.getCurrentLocation());
             }   
-        } 
+        }
         
         // Voer de nieuwe orders uit
         updateRoutes(newRoutes);

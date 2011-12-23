@@ -35,12 +35,7 @@ public class Route implements Comparable<Route> {
 		}
 		else if (!gameState.checkTarget(target, targetLoc))
 		{
-			// Target bevindt zich niet (meer) op de target locatie
-			finished = true;
-		}
-		else if (gameState.isWater(path.getFirst()))
-		{
-			// De volgende stap is een water locatie
+			// Target bestaat niet meer of blijkt water te zijn
 			finished = true;
 		}
 		else if (bot.doMoveLocation(currentLoc, path.getFirst()))

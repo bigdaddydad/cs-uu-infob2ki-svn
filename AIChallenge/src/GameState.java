@@ -11,6 +11,7 @@ public class GameState {
 	private Ants ants;
 	private Set<Tile> reservedTiles = new HashSet<Tile>();
 	private Set<Tile> enemyHills = new HashSet<Tile>();
+	private Set<Tile> myHills = new HashSet<Tile>();
 	private Set<Tile> waterTiles = new HashSet<Tile>();
 	private Set<Tile> unseenTiles;
 	private InfluenceMap imap;
@@ -29,15 +30,27 @@ public class GameState {
 		// Wis lijst van gereserveerde locaties
         reservedTiles.clear();
         
+        // Verwijder vijandige mierenhopen die verwoest zijn
+        for (Iterator<Tile> i = enemyHills.iterator(); i.hasNext();) 
+        {
+        	Tile hill = i.next();
+        	
+        	if (ants.isVisible(hill) && !ants.getEnemyHills().contains(hill))
+        		i.remove();
+        }
+        
         // Voeg nieuw ontdekte vijandige mierenhopen toe
         for (Tile hill : ants.getEnemyHills())
         	enemyHills.add(hill);
         
-        // Reserveer de eigen mierenhopen als niet-toegangbare locaties
+        // Voeg eigen mierhopen toe aan lijst en reserveer ze als niet-toegangbare locaties
         for (Tile myHill : ants.getMyHills()) 
+        {
+        	myHills.add(myHill);
         	reservedTiles.add(myHill);
+        }
         
-        // Voeg mierlocaties toe aan lijst en reserveer ze als niet-toegangbare locaties
+        // Voeg eigen mierlocaties toe aan lijst en reserveer ze als niet-toegangbare locaties
         for (Tile myAnt : ants.getMyAnts()) 
         {
         	availableAnts.add(myAnt);
@@ -67,23 +80,13 @@ public class GameState {
         }
         
         // Update de influence map
-        imap = new InfluenceMap(this, getEnemyAnts(), 10);
-        
-//        for(int x = 0; x < gameState.getRows(); x++)
-//        {
-//        	for(int y = 0; y < gameState.getCols(); y++)
-//            {
-//            	System.out.print(imap.map[x][y] + "");
-//            }
-//        	
-//        	System.out.println(" ");
-//        }
+        imap = new InfluenceMap(this, ants.getEnemyAnts(), 10);
         
         return availableAnts;
     }
 	
 	/**
-     * Functie die een aantal random Tiles pakt uit de meegegeven lijst van Tiles
+     * Functie die een aantal Tiles pakt uit de meegegeven lijst van Tiles
      * @return lijst met <code>i</code> aantal random geselecteerde Tiles
      */
     private Set<Tile> pickTiles(Set<Tile> tiles, int i) 
@@ -118,11 +121,51 @@ public class GameState {
 			case FOOD: return ants.getFoodTiles().contains(targetLoc);
 			case MY_ANT: return ants.getMyAnts().contains(targetLoc);
 			case ENEMY_ANT: return ants.getEnemyAnts().contains(targetLoc);
-			case MY_HILL: return ants.getMyHills().contains(targetLoc);
+			case MY_HILL: return myHills.contains(targetLoc);
 			case ENEMY_HILL: return enemyHills.contains(targetLoc);
 			case LAND: return !waterTiles.contains(targetLoc);
 		    default: return false;
 		}
+	}
+    
+    /**
+     * Functie die gegeven een locatie de buurlocaties geeft
+     * @return lijst van buurlocaties
+     */
+    public Set<Tile> getNeighbors(Tile t)
+	{
+		Set<Tile> result = new HashSet<Tile>();
+		
+		// Loop alle directies langs en voeg toegankelijke buren toe aan het resultaat
+		for (Aim direction : Aim.values())
+		{
+			Tile neighbor = ants.getTile(t, direction);
+			
+			if (!waterTiles.contains(neighbor))
+				result.add(neighbor);
+		}
+		
+		return result;
+	}
+    
+    /**
+     * Functie die de meegegeven lijst van locaties filtert op gevaar
+     * @return lijst van locaties waarvan gevaar binnen de range ligt
+     */
+    public Set<Tile> getTiles(Set<Tile> tiles, int minDanger, int maxDanger)
+	{
+		Set<Tile> result = new HashSet<Tile>();
+		
+		// Loop de locaties langs en voeg toe aan resultaat als gevaar binnen range ligt 
+		for (Tile tile : tiles)
+        {
+			int danger = imap.getValue(tile);
+			
+        	if (danger >= minDanger && (maxDanger == -1 || danger <= maxDanger))
+        		result.add(tile);
+        }
+		
+		return result;
 	}
     
     public int getRows() 
@@ -143,8 +186,8 @@ public class GameState {
 	public Tile getRandomTile() 
 	{
 		return new Tile(
-			(int)(ants.getCols()*Math.random()), 
-			(int)(ants.getRows()*Math.random())
+			(int)(ants.getCols() * Math.random()), 
+			(int)(ants.getRows() * Math.random())
 		);
 	}
 	
@@ -153,24 +196,24 @@ public class GameState {
 		return ants.getDirections(t1, t2);
 	}
 	
-	public Set<Tile> getMyAnts() 
+	public Set<Tile> getMyHills()
 	{
-		return ants.getMyAnts();
+		return myHills;
 	}
 	
-	public Set<Tile> getEnemyAnts() 
+	public Set<Tile> getMyHills(int minDanger, int maxDanger)
 	{
-		return ants.getEnemyAnts();
-	}
-	
-	public Set<Tile> getMyHills() 
-	{
-		return ants.getMyHills();
+		return getTiles(myHills, minDanger, maxDanger);
 	}
 	
 	public Set<Tile> getEnemyHills() 
 	{
 		return enemyHills;
+	}
+	
+	public Set<Tile> getEnemyHills(int minDanger, int maxDanger)
+	{
+		return getTiles(enemyHills, minDanger, maxDanger);
 	}
 	
 	public Set<Tile> getFoodTiles() 
@@ -188,29 +231,9 @@ public class GameState {
 		return pickTiles(unseenTiles, amount);
 	}
 	
-	public boolean isMyAnt(Tile t) 
-	{
-		return ants.getMyAnts().contains(t);
-	}
-	
-	public boolean isEnemyAnt(Tile t) 
-	{
-		return ants.getEnemyAnts().contains(t);
-	}
-	
 	public boolean isMyHill(Tile t) 
 	{
-		return ants.getMyHills().contains(t);
-	}
-	
-	public boolean isEnemyHill(Tile t) 
-	{
-		return enemyHills.contains(t);
-	}
-	
-	public boolean isFood(Tile t) 
-	{
-		return ants.getFoodTiles().contains(t);
+		return myHills.contains(t);
 	}
 	
 	public boolean isWater(Tile t) 
