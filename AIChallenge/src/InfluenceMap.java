@@ -11,35 +11,51 @@ public class InfluenceMap {
 	
 	public InfluenceMap(GameState gameState, Set<Tile> objects, int radius)
 	{
+		// Initialiseer de map
 		map = new int[gameState.getRows()][gameState.getCols()];
 		
+		// Bereken voor elk object de influence
 		for (Tile object : objects)
 			calculateInfluence(gameState, object, radius);
 	}
 	
+	/**
+     * Functie die gegeven een object en een radius via een BFS methode de influence berekent 
+     */
 	private void calculateInfluence(GameState gameState, Tile object, int radius)
 	{	
+		// Initialiseer een set waar locaties in komen te staan die bezocht zijn
 		Set<Tile> visited = new HashSet<Tile>();
+		
+		// Initialiseer een queue waar locaties in komen te staan waarvan buren bezocht moeten worden
 		LinkedList<Tile> queue = new LinkedList<Tile>();
 		
+		// Bepaal influence voor start locatie en markeer hem als bezocht
 		object.depth = 0;
 		map[object.getRow()][object.getCol()] += radius;
 		visited.add(object);
 		
+		// Voeg start locatie toe aan de queue
 		queue.add(object);
 		
+		// Voer algoritme uit zolang de queue niet leeg is
 		while (!queue.isEmpty())
 		{
+			// Haal het voorste element uit de queue
 			Tile x = queue.remove();
 			
+			// Loop alle buurlocaties langs
 			for (Tile y : gameState.getNeighbors(x))
 			{
+				// Ga alleen verder als locatie nog niet bezocht is
 				if (!visited.contains(y))
 				{
+					// Bepaal influence voor locatie en markeer hem als bezocht
 					y.depth = x.depth + 1;
 					map[y.getRow()][y.getCol()] += (radius - y.depth);
 					visited.add(y);
 					
+					// Voeg locatie toe aan de queue als buren nog binnen de radius vallen
 					if (y.depth < radius)
 						queue.add(y);
 				}
@@ -47,6 +63,10 @@ public class InfluenceMap {
 		}
 	}
 	
+	/**
+     * Functie die gegeven een locatie de influence waarde geeft
+     * @return influence waarde
+     */
 	public int getValue(Tile t)
 	{
 		return map[t.getRow()][t.getCol()];

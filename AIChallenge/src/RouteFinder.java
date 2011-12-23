@@ -18,6 +18,10 @@ public class RouteFinder {
 	private final static int PATH_LIMIT = 10000;
 	private final static int PATH_SAFETY = 2;
 	
+	/**
+     * Functie die gegeven start- en eindlocaties alle korste routes zoekt en sorteert op lengte van de routes
+     * @return lijst van alle korste routes tussen start- en eindlocaties gesorteerd op lengte van de routes
+     */
 	public static List<Route> findRoutes(GameState gameState, Target target, Set<Tile> startLocs, Set<Tile> targetLocs)
 	{
 		// Lijst van gevonden routes
@@ -46,6 +50,10 @@ public class RouteFinder {
         return routes;
 	}
 	
+	/**
+     * Functie die gegeven een lijst van target locaties de veiligste locaties uitkiest binnen het target limiet
+     * @return lijst van veiligste locaties binnen het target limiet
+     */
 	private static Set<Tile> getSafestLocations(GameState gameState, Set<Tile> targetLocs) 
 	{
 		// De map met de veiligste locaties
