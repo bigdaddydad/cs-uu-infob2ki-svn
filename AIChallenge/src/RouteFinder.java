@@ -14,7 +14,7 @@ import java.util.Set;
  */
 public class RouteFinder {
 	
-	private final static int TARGET_LIMIT = 100;
+	private final static int TARGET_LIMIT = 1000;
 	private final static int PATH_LIMIT = 10000;
 	private final static int PATH_SAFETY = 2;
 	
