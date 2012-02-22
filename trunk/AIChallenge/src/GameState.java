@@ -141,7 +141,7 @@ public class GameState {
 		{
 			Tile neighbor = ants.getTile(t, direction);
 			
-			if (!waterTiles.contains(neighbor))
+			if (!waterTiles.contains(neighbor) && !myHills.contains(neighbor))
 				result.add(neighbor);
 		}
 		

@@ -27,8 +27,11 @@ public class MyBot extends Bot
         // Update game state
     	availableAnts = gameState.update(getAnts());
     	
-    	// Update de strategie
-    	updateStrategy();
+    	// Update de vijandige strategy
+    	Strategy enemyStrategy = updateEnemyStrategy();
+    	
+    	// Update de eigen strategie
+    	updateMyStrategy(enemyStrategy);
     	
         /** - Geef alle mieren orders - */
         
@@ -54,48 +57,40 @@ public class MyBot extends Bot
     }
     
     /**
-     * Functie die vanuit huidige situatie een strategie bepaalt
+     * Functie die vanuit huidige situatie de eigen strategie bepaalt
      */
-    private void updateStrategy()
+    private void updateMyStrategy(Strategy enemyStrategy)
     {
-    	Strategy newStrategy = Strategy.DEFAULT;
+    	Strategy myStrategy = Strategy.DEFAULT;
     	forceStrategy = false;
     	
-    	if (gameState.getEnemyHills().size() > 0)
-    	{
-    		if (gameState.getUnseenTiles().size() == 0 && gameState.getEnemyHills().size() == 1)
-    		{
-    			// Forceer aanvallen als dit de enige vijandige mierenhoop is die nog over is
-    			newStrategy = Strategy.ALL_OFFENSIVE;
-    		}
-    		else if (gameState.getEnemyHills(0, 4).size() > 0)
-    		{
-    			// Ga aanvallend spelen, val vijandige mierenhopen waar klein gevaar is aan
-        		newStrategy = Strategy.OFFENSIVE;
-    		}
-    	}
-    	if (gameState.getMyHills(1, 4).size() > 0)
-    	{
-    		// Ga verdedigend spelen, verdedig eigen mierenhopen waar klein gevaar is
-    		newStrategy = Strategy.DEFENSIVE;
-    	}
-    	if (gameState.getMyHills(5, -1).size() > 0)
-    	{
-    		// Forceer verdedigen bij eigen mierenhopen waar veel gevaar is
-    		newStrategy = Strategy.ALL_DEFENSIVE;
-    	}
+    	// Speel offensive als vijand defensive speelt
+		if (enemyStrategy == Strategy.DEFENSIVE)
+			myStrategy = Strategy.OFFENSIVE;
+		
+		// Speel defensive als vijand offensive speelt
+		if (enemyStrategy == Strategy.OFFENSIVE)
+			myStrategy = Strategy.DEFENSIVE;
     	
-    	if (newStrategy != strategy)
-    	{
-    		// Forceer strategie als nieuwe of oude strategie geforceerd aanvallen of verdedigen is
-    		if (newStrategy == Strategy.ALL_DEFENSIVE || newStrategy == Strategy.ALL_OFFENSIVE
-    		    || strategy == Strategy.ALL_DEFENSIVE || strategy == Strategy.ALL_OFFENSIVE)
-    		{
-    			forceStrategy = true;
-    		}
-    	}
+    	strategy = myStrategy;
+    }
+    
+    /**
+     * Functie die vanuit huidige situatie de vijandige strategie bepaalt
+     */
+    private Strategy updateEnemyStrategy()
+    {
+    	Strategy enemyStrategy = Strategy.DEFAULT;
     	
-    	strategy = newStrategy;
+    	// Defensive als er gevaar bij enemy hill is
+    	if (gameState.getEnemyHills(36, -1).size() > 0)
+    		enemyStrategy = Strategy.DEFENSIVE;
+    	
+    	// Offensive als er gevaar bij eigen hill is
+    	if (gameState.getMyHills(6, -1).size() > 0)
+    		enemyStrategy = Strategy.OFFENSIVE;
+    	
+    	return enemyStrategy;
     }
     
 	/**
