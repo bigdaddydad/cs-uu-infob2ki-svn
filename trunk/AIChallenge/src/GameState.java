@@ -15,6 +15,7 @@ public class GameState {
 	private Set<Tile> waterTiles = new HashSet<Tile>();
 	private Set<Tile> unseenTiles;
 	private InfluenceMap imap;
+	private Tile hillDefender;
 	
 	/**
      * Functie die map locaties en map objecten update
@@ -29,6 +30,10 @@ public class GameState {
 		
 		// Wis lijst van gereserveerde locaties
         reservedTiles.clear();
+        
+        // Update status van hill defender
+        if (!ants.getMyAnts().contains(hillDefender))
+        	hillDefender = null;
         
         // Verwijder vijandige mierenhopen die verwoest zijn
         for (Iterator<Tile> i = enemyHills.iterator(); i.hasNext();) 
@@ -81,6 +86,9 @@ public class GameState {
         
         // Update de influence map
         imap = new InfluenceMap(this, ants.getEnemyAnts(), 10);
+        
+        // Verwijder hill defender van de lijst van beschikbare mieren
+        availableAnts.remove(hillDefender);
         
         return availableAnts;
     }
@@ -141,7 +149,7 @@ public class GameState {
 		{
 			Tile neighbor = ants.getTile(t, direction);
 			
-			if (!waterTiles.contains(neighbor) && !myHills.contains(neighbor))
+			if (!waterTiles.contains(neighbor) && !myHills.contains(neighbor) && !neighbor.equals(hillDefender))
 				result.add(neighbor);
 		}
 		
@@ -166,6 +174,16 @@ public class GameState {
         }
 		
 		return result;
+	}
+    
+	public void setHillDefender(Tile t)
+	{
+		hillDefender = t;
+	}
+	
+	public Tile getHillDefender()
+	{
+		return hillDefender;
 	}
     
     public int getRows() 

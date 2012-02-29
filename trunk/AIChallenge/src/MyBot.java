@@ -34,7 +34,13 @@ public class MyBot extends Bot
     	updateMyStrategy(enemyStrategy);
     	
         /** - Geef alle mieren orders - */
-        
+    	
+    	if (availableAnts.size() > 1)
+    	{
+    		// Laat steeds 1 mier de eigen mierhoop verdedigen
+    		updateHillDefender();
+    	}
+    	
     	if (forceStrategy)
     	{
     		// Verwijder alle huidige routes als een nieuwe strategie geforceerd wordt
@@ -53,7 +59,35 @@ public class MyBot extends Bot
 	    // Deblokkeer eigen heuvels
 	    unblockHills();
 	    
-	    System.out.println("Huidige strategie: " + strategy.name());
+	    //System.out.println("Huidige strategie: " + strategy.name());
+    }
+    
+    /**
+     * Functie die vanuit huidige situatie de eigen strategie bepaalt
+     */
+    private void updateHillDefender()
+    {
+    	Tile currentDefender = gameState.getHillDefender();
+    	Tile myHill = null;
+    	
+    	for (Tile hill : gameState.getMyHills())
+    		myHill = hill;
+    	
+    	if (currentDefender == null && availableAnts.contains(myHill))
+    	{
+    		for (Aim direction : Aim.values())
+    		{
+    			Tile defendLoc = gameState.getTile(myHill, direction);
+    			
+    			if (!gameState.isWater(defendLoc) && !gameState.isReserved(defendLoc));
+    			{
+    				doMoveDirection(myHill, direction);
+    				gameState.setHillDefender(defendLoc);
+    				availableAnts.remove(myHill);
+    				break;
+    			}
+    		}
+    	}
     }
     
     /**
