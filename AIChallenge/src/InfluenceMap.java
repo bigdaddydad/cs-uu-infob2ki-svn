@@ -45,7 +45,7 @@ public class InfluenceMap {
 			Tile x = queue.remove();
 			
 			// Loop alle buurlocaties langs
-			for (Tile y : gameState.getNeighbors(x))
+			for (Tile y : getNeighbors(gameState, x))
 			{
 				// Ga alleen verder als locatie nog niet bezocht is
 				if (!visited.contains(y))
@@ -61,6 +61,26 @@ public class InfluenceMap {
 				}
 			}
 		}
+	}
+	
+	/**
+     * Functie die gegeven een locatie de buurlocaties geeft
+     * @return lijst van buurlocaties
+     */
+    private Set<Tile> getNeighbors(GameState gameState, Tile t)
+	{
+		Set<Tile> result = new HashSet<Tile>();
+		
+		// Loop alle directies langs en voeg toegankelijke buren toe aan het resultaat
+		for (Aim direction : Aim.values())
+		{
+			Tile neighbor = gameState.getTile(t, direction);
+			
+			if (!gameState.isWater(neighbor))
+				result.add(neighbor);
+		}
+		
+		return result;
 	}
 	
 	/**

@@ -24,9 +24,7 @@ public enum Strategy {
 	)),
 	
 	ALL_OFFENSIVE(Arrays.asList(
-		new Action(Target.ENEMY_HILL, 1.0),
-		new Action(Target.FOOD, 1.0), 
-		new Action(Target.LAND, 1.0)
+		new Action(Target.ENEMY_HILL, 1.0)
 	)),
 	
 	ALL_DEFENSIVE(Arrays.asList(

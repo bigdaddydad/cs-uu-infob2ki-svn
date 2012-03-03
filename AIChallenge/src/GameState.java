@@ -137,26 +137,6 @@ public class GameState {
 	}
     
     /**
-     * Functie die gegeven een locatie de buurlocaties geeft
-     * @return lijst van buurlocaties
-     */
-    public Set<Tile> getNeighbors(Tile t)
-	{
-		Set<Tile> result = new HashSet<Tile>();
-		
-		// Loop alle directies langs en voeg toegankelijke buren toe aan het resultaat
-		for (Aim direction : Aim.values())
-		{
-			Tile neighbor = ants.getTile(t, direction);
-			
-			if (!waterTiles.contains(neighbor) && !myHills.contains(neighbor) && !neighbor.equals(hillDefender))
-				result.add(neighbor);
-		}
-		
-		return result;
-	}
-    
-    /**
      * Functie die de meegegeven lijst van locaties filtert op gevaar
      * @return lijst van locaties waarvan gevaar binnen de range ligt
      */
@@ -184,6 +164,11 @@ public class GameState {
 	public Tile getHillDefender()
 	{
 		return hillDefender;
+	}
+	
+	public boolean isHillDefender(Tile t)
+	{
+		return t.equals(hillDefender);
 	}
     
     public int getRows() 
@@ -279,6 +264,9 @@ public class GameState {
 	
 	public int getInfluenceValue(Tile t)
 	{
-		return imap.getValue(t);
+		if (t == null)
+			return 0;
+		else
+			return imap.getValue(t);
 	}
 }
