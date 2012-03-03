@@ -146,7 +146,7 @@ public class RouteFinder {
 				closedset.add(x);
 				
 				// Loop alle buurlocaties langs
-				for (Tile y : gameState.getNeighbors(x))
+				for (Tile y : getNeighbors(gameState, x, targetLoc))
 				{
 					// Sla locatie over als hij al afgerond is
 				    if (closedset.contains(y))
@@ -201,7 +201,7 @@ public class RouteFinder {
      * Functie die de afstand schat tussen twee locaties op de map
      * @return de geschatte afstand
      */
-	public static int estimateDistance(GameState gameState, Tile t1, Tile t2)
+	private static int estimateDistance(GameState gameState, Tile t1, Tile t2)
 	{
 		// Bereken het verschil in rijen en kolommen
 		int rowDelta = Math.abs(t1.getRow() - t2.getRow());
@@ -213,5 +213,28 @@ public class RouteFinder {
         
         // Return als geschatte afstand de som van het aantal rijen en kolommen
         return rowDelta + colDelta;
+	}
+	
+	/**
+     * Functie die gegeven een locatie de buurlocaties geeft
+     * @return lijst van buurlocaties
+     */
+    private static Set<Tile> getNeighbors(GameState gameState, Tile t, Tile targetLoc)
+	{
+		Set<Tile> result = new HashSet<Tile>();
+		
+		// Loop alle directies langs en voeg toegankelijke buren toe aan het resultaat
+		for (Aim direction : Aim.values())
+		{
+			Tile neighbor = gameState.getTile(t, direction);
+			
+			if (!gameState.isWater(neighbor) && !gameState.isHillDefender(neighbor) && 
+			   (!gameState.isMyHill(neighbor) || neighbor.equals(targetLoc)))
+			{
+				result.add(neighbor);
+			}
+		}
+		
+		return result;
 	}
 }

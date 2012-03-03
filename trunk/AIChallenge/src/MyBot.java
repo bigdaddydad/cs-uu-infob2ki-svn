@@ -14,7 +14,8 @@ public class MyBot extends Bot
 	private List<Route> activeRoutes = new ArrayList<Route>();
 	private Set<Tile> availableAnts;
 	private boolean forceStrategy;
-	private Strategy strategy;
+	private Strategy myStrategy = Strategy.DEFAULT;
+	private Strategy enemyStrategy = Strategy.DEFAULT;
     
     /**
      * Functie die iedere ronde wordt uitgevoerd
@@ -28,10 +29,17 @@ public class MyBot extends Bot
     	availableAnts = gameState.update(getAnts());
     	
     	// Update de vijandige strategy
-    	Strategy enemyStrategy = updateEnemyStrategy();
+    	updateEnemyStrategy();
+    	
+    	// --------- tijdelijke variabele ---------
+    	Strategy prevStrategy = myStrategy;
     	
     	// Update de eigen strategie
-    	updateMyStrategy(enemyStrategy);
+    	updateMyStrategy();
+    	
+    	// --------- tijdelijke system out ---------
+    	if (myStrategy != prevStrategy)
+    		System.out.println("Strategie gewijzigd naar: " + myStrategy.name());
     	
         /** - Geef alle mieren orders - */
     	
@@ -53,28 +61,77 @@ public class MyBot extends Bot
     	}
     	
     	// Voer strategie uit
-    	for (Action action : strategy.getActions())
+    	for (Action action : myStrategy.getActions())
     		searchAndOrder(action.getTarget(), (int)(availableAnts.size() * action.getAntRate()));
     	
 	    // Deblokkeer eigen heuvels
 	    unblockHills();
-	    
-	    //System.out.println("Huidige strategie: " + strategy.name());
     }
     
     /**
      * Functie die vanuit huidige situatie de eigen strategie bepaalt
      */
+    private void updateMyStrategy()
+    {
+    	forceStrategy = false;
+    	
+    	// Speel offensive als vijand defensive speelt
+		if (enemyStrategy == Strategy.DEFENSIVE)
+		{
+			myStrategy = Strategy.OFFENSIVE;
+		}
+		
+		// Speel defensive als vijand offensive speelt
+		if (enemyStrategy == Strategy.OFFENSIVE)
+		{
+			if (myStrategy != Strategy.ALL_DEFENSIVE)
+				forceStrategy = true;
+			
+			myStrategy = Strategy.ALL_DEFENSIVE;
+		}
+    }
+    
+    /**
+     * Functie die vanuit huidige situatie de vijandige strategie bepaalt
+     */
+    private void updateEnemyStrategy()
+    {
+    	if (enemyStrategy == Strategy.DEFAULT)
+    	{
+	    	if (gameState.getEnemyHills(20, -1).size() > 0 &&	// Veel gevaar bij vijandige mierhoop
+	    		gameState.getMyHills(0, 2).size() > 0)			// Weinig gevaar bij eigen mierhoop
+			{
+				// Vijand speelt defensive
+				enemyStrategy = Strategy.DEFENSIVE;
+			}
+	    	
+	    	if (gameState.getMyHills(3, -1).size() > 0 ||		// Gevaar bij eigen mierhoop
+	    	   (availableAnts.size() > 2 && gameState.getHillDefender() == null))	// Eigen mierhoop defender is dood	
+			{
+				// Vijand speelt offensive
+				enemyStrategy = Strategy.OFFENSIVE;
+			}
+    	}
+    }
+    
+    /**
+     * Functie die de hill defender update
+     */
     private void updateHillDefender()
     {
+    	// Vraag de huidige hill defender op
     	Tile currentDefender = gameState.getHillDefender();
+    	
+    	// Vraag de eigen hill op
     	Tile myHill = null;
     	
     	for (Tile hill : gameState.getMyHills())
     		myHill = hill;
     	
-    	if (currentDefender == null && availableAnts.contains(myHill))
+    	// Bepaal nieuwe hill defender als er geen een is
+    	if (myHill != null && currentDefender == null && availableAnts.contains(myHill))
     	{
+    		// Zet nieuwe hill defender naast een van de kanten van de hill
     		for (Aim direction : Aim.values())
     		{
     			Tile defendLoc = gameState.getTile(myHill, direction);
@@ -88,43 +145,6 @@ public class MyBot extends Bot
     			}
     		}
     	}
-    }
-    
-    /**
-     * Functie die vanuit huidige situatie de eigen strategie bepaalt
-     */
-    private void updateMyStrategy(Strategy enemyStrategy)
-    {
-    	Strategy myStrategy = Strategy.DEFAULT;
-    	forceStrategy = false;
-    	
-    	// Speel offensive als vijand defensive speelt
-		if (enemyStrategy == Strategy.DEFENSIVE)
-			myStrategy = Strategy.OFFENSIVE;
-		
-		// Speel defensive als vijand offensive speelt
-		if (enemyStrategy == Strategy.OFFENSIVE)
-			myStrategy = Strategy.DEFENSIVE;
-    	
-    	strategy = myStrategy;
-    }
-    
-    /**
-     * Functie die vanuit huidige situatie de vijandige strategie bepaalt
-     */
-    private Strategy updateEnemyStrategy()
-    {
-    	Strategy enemyStrategy = Strategy.DEFAULT;
-    	
-    	// Defensive als er gevaar bij enemy hill is
-    	if (gameState.getEnemyHills(36, -1).size() > 0)
-    		enemyStrategy = Strategy.DEFENSIVE;
-    	
-    	// Offensive als er gevaar bij eigen hill is
-    	if (gameState.getMyHills(6, -1).size() > 0)
-    		enemyStrategy = Strategy.OFFENSIVE;
-    	
-    	return enemyStrategy;
     }
     
 	/**
@@ -174,18 +194,8 @@ public class MyBot extends Bot
 		{
 			case FOOD: targetLocs = gameState.getFoodTiles(); break;
 			case LAND: targetLocs = gameState.getUnseenTiles(maxOrders); break; 
-			case ENEMY_HILL: 
-				if (strategy == Strategy.ALL_OFFENSIVE)
-					targetLocs = gameState.getEnemyHills();
-				else
-					targetLocs = gameState.getEnemyHills(0, 4);
-				break;
-			case MY_HILL: 
-				if (strategy == Strategy.ALL_DEFENSIVE)
-					targetLocs = gameState.getMyHills(5, -1);
-				else
-					targetLocs = gameState.getMyHills(1, 4);
-				break;
+			case ENEMY_HILL: targetLocs = gameState.getEnemyHills(); break;
+			case MY_HILL: targetLocs = gameState.getMyHills(); break;
 		}
     	
     	// Lijst van gevonden routes
