@@ -16,6 +16,8 @@ public class MyBot extends Bot
 	private boolean forceStrategy;
 	private Strategy myStrategy = Strategy.DEFAULT;
 	private Strategy enemyStrategy = Strategy.DEFAULT;
+	private float defensiveThreshold = 1;
+	private float offensiveThreshold = 1;
     
     /**
      * Functie die iedere ronde wordt uitgevoerd
@@ -31,8 +33,13 @@ public class MyBot extends Bot
     	// Update de vijandige strategy
     	updateEnemyStrategy();
     	
+    	Strategy strategy = myStrategy;
+    	
     	// Update de eigen strategie
     	updateMyStrategy();
+    	
+    	if (myStrategy != strategy)
+    		System.out.println("Enemy Strategy: " + enemyStrategy.name());
     	
         /** - Geef alle mieren orders - */
     	
@@ -66,12 +73,18 @@ public class MyBot extends Bot
     	myStrategy = Strategy.DEFAULT;
     	forceStrategy = false;
     	
-    	if (enemyStrategy == Strategy.DEFENSIVE)
+    	if (enemyStrategy == Strategy.DEFENSIVE || enemyStrategy == Strategy.DEFAULT)
 		{
+    		if (myStrategy == Strategy.DEFENSIVE || myStrategy == Strategy.ALL_DEFENSIVE)
+        	{
+        		// Forceer nieuwe strategie als we momenteel aan het verdedigen zijn
+        		forceStrategy = true;
+        	}
+    		
 			// Als leger niet meer uitgebreid kan worden, laat dan alle mieren aanvallen
 			if (gameState.getFoodTiles().size() == 0 && gameState.getUnseenTiles().size() == 0)
 			{
-				// Forceer nieuwe strategie als we nog niet aan het aanvallen waren
+				// Forceer nieuwe strategie als we nog niet allemaal aan het aanvallen waren
 				if (myStrategy != Strategy.ALL_OFFENSIVE)
 					forceStrategy = true;
 				
@@ -84,7 +97,7 @@ public class MyBot extends Bot
     		// Als leger niet meer uitgebreid kan worden, laat dan alle mieren verdedigen
 			if (gameState.getFoodTiles().size() == 0 && gameState.getUnseenTiles().size() == 0)
 			{
-				// Forceer nieuwe strategie als we nog niet aan het verdedigen waren
+				// Forceer nieuwe strategie als we nog niet allemaal aan het verdedigen waren
 				if (myStrategy != Strategy.ALL_DEFENSIVE)
 					forceStrategy = true;
 				
@@ -107,25 +120,34 @@ public class MyBot extends Bot
      */
     private void updateEnemyStrategy()
     {
-    	if (enemyStrategy == Strategy.DEFAULT)
-    	{
-	    	// Vraag eigen en vijandige hill op
-			Tile myHill = gameState.getMyHill();
-			Tile enemyHill = gameState.getEnemyHill();
-			
-	    	if (gameState.getInfluenceValue(enemyHill) >= 20 &&		// Veel gevaar bij vijandige mierhoop
-	    		gameState.getInfluenceValue(myHill) < 5)			// Weinig gevaar bij eigen mierhoop
-			{
-				// Vijand speelt defensive
-				enemyStrategy = Strategy.DEFENSIVE;
-			}
-	    	
-	    	if (gameState.getInfluenceValue(myHill) >= 5)			// Gevaar bij eigen mierhoop	
-			{
-				// Vijand speelt offensive
-				enemyStrategy = Strategy.OFFENSIVE;
-			}
-    	}
+    	enemyStrategy = Strategy.DEFAULT;
+    	
+    	// Vraag eigen en vijandige hill op
+		Tile myHill = gameState.getMyHill();
+		Tile enemyHill = gameState.getEnemyHill();
+		
+		// Bereken gevaar bij eigen hill en vijandige hill
+		int infMyHill = gameState.getInfluenceValue(myHill);
+		int infEnemyHill = gameState.getInfluenceValue(enemyHill);
+		
+    	if (infEnemyHill >= 20 * defensiveThreshold		// Veel gevaar bij vijandige mierhoop
+    		&& infMyHill <  5  * defensiveThreshold)	// Weinig gevaar bij eigen mierhoop
+		{
+    		// Verhoog de grens dat vijand offensive speelt
+    		offensiveThreshold *= 0.5;
+    		
+			// Zet vijandige strategie op defensive
+			enemyStrategy = Strategy.DEFENSIVE;
+		}
+    	
+    	if (infMyHill >= 5 * offensiveThreshold)		// Gevaar bij eigen mierhoop	
+		{
+    		// Verhoog de grens dat vijand defensive speelt
+    		defensiveThreshold *= 0.5;
+    		
+    		// Zet vijandige strategie op offensive
+			enemyStrategy = Strategy.OFFENSIVE;
+		}
     }
     
     /**
