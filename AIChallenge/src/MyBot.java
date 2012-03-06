@@ -74,14 +74,21 @@ public class MyBot extends Bot
     private void updateMyStrategy()
     {
     	forceStrategy = false;
+    	myStrategy = Strategy.DEFAULT;
     	
-    	// Speel offensive als vijand defensive speelt
 		if (enemyStrategy == Strategy.DEFENSIVE)
 		{
-			myStrategy = Strategy.OFFENSIVE;
+			// Versterk eigen mierleger zolang er nog voedsel te vinden is
+			// Als leger niet meer uitgebreid kan worden, laat dan alle mieren aanvallen
+			if (gameState.getFoodTiles().size() == 0 && gameState.getUnseenTiles().size() == 0)
+			{
+				if (myStrategy != Strategy.ALL_OFFENSIVE)
+					forceStrategy = true;
+				
+				myStrategy = Strategy.ALL_OFFENSIVE;
+			}
 		}
 		
-		// Speel defensive als vijand offensive speelt
 		if (enemyStrategy == Strategy.OFFENSIVE)
 		{
 			if (myStrategy != Strategy.ALL_DEFENSIVE)
@@ -98,14 +105,17 @@ public class MyBot extends Bot
     {
     	if (enemyStrategy == Strategy.DEFAULT)
     	{
-	    	if (gameState.getEnemyHills(20, -1).size() > 0 &&	// Veel gevaar bij vijandige mierhoop
-	    		gameState.getMyHills(0, 2).size() > 0)			// Weinig gevaar bij eigen mierhoop
+    		Tile myHill = gameState.getMyHill();
+    		Tile enemyHill = gameState.getEnemyHill();
+    		
+	    	if (gameState.getInfluenceValue(enemyHill) >= 20 &&		// Veel gevaar bij vijandige mierhoop
+	    		gameState.getInfluenceValue(myHill) < 5)			// Weinig gevaar bij eigen mierhoop
 			{
 				// Vijand speelt defensive
 				enemyStrategy = Strategy.DEFENSIVE;
 			}
 	    	
-	    	if (gameState.getMyHills(3, -1).size() > 0 ||		// Gevaar bij eigen mierhoop
+	    	if (gameState.getInfluenceValue(myHill) >= 5 ||							// Gevaar bij eigen mierhoop
 	    	   (availableAnts.size() > 2 && gameState.getHillDefender() == null))	// Eigen mierhoop defender is dood	
 			{
 				// Vijand speelt offensive
@@ -123,10 +133,7 @@ public class MyBot extends Bot
     	Tile currentDefender = gameState.getHillDefender();
     	
     	// Vraag de eigen hill op
-    	Tile myHill = null;
-    	
-    	for (Tile hill : gameState.getMyHills())
-    		myHill = hill;
+    	Tile myHill = gameState.getMyHill();
     	
     	// Bepaal nieuwe hill defender als er geen een is
     	if (myHill != null && currentDefender == null && availableAnts.contains(myHill))

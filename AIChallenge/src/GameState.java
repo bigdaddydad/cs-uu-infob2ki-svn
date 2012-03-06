@@ -136,26 +136,6 @@ public class GameState {
 		}
 	}
     
-    /**
-     * Functie die de meegegeven lijst van locaties filtert op gevaar
-     * @return lijst van locaties waarvan gevaar binnen de range ligt
-     */
-    public Set<Tile> getTiles(Set<Tile> tiles, int minDanger, int maxDanger)
-	{
-		Set<Tile> result = new HashSet<Tile>();
-		
-		// Loop de locaties langs en voeg toe aan resultaat als gevaar binnen range ligt 
-		for (Tile tile : tiles)
-        {
-			int danger = imap.getValue(tile);
-			
-        	if (danger >= minDanger && (maxDanger == -1 || danger <= maxDanger))
-        		result.add(tile);
-        }
-		
-		return result;
-	}
-    
 	public void setHillDefender(Tile t)
 	{
 		hillDefender = t;
@@ -204,9 +184,12 @@ public class GameState {
 		return myHills;
 	}
 	
-	public Set<Tile> getMyHills(int minDanger, int maxDanger)
+	public Tile getMyHill()
 	{
-		return getTiles(myHills, minDanger, maxDanger);
+		for (Tile myHill : myHills)
+			return myHill;
+		
+		return null;
 	}
 	
 	public Set<Tile> getEnemyHills() 
@@ -214,9 +197,12 @@ public class GameState {
 		return enemyHills;
 	}
 	
-	public Set<Tile> getEnemyHills(int minDanger, int maxDanger)
+	public Tile getEnemyHill()
 	{
-		return getTiles(enemyHills, minDanger, maxDanger);
+		for (Tile enemyHill : enemyHills)
+			return enemyHill;
+		
+		return null;
 	}
 	
 	public Set<Tile> getFoodTiles() 
