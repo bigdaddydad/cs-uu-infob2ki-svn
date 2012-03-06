@@ -31,23 +31,13 @@ public class MyBot extends Bot
     	// Update de vijandige strategy
     	updateEnemyStrategy();
     	
-    	// --------- tijdelijke variabele ---------
-    	Strategy prevStrategy = myStrategy;
-    	
     	// Update de eigen strategie
     	updateMyStrategy();
     	
-    	// --------- tijdelijke system out ---------
-    	if (myStrategy != prevStrategy)
-    		System.out.println("Strategie gewijzigd naar: " + myStrategy.name());
-    	
         /** - Geef alle mieren orders - */
     	
-    	if (availableAnts.size() > 1)
-    	{
-    		// Laat steeds 1 mier de eigen mierhoop verdedigen
-    		updateHillDefender();
-    	}
+		// Laat steeds een aantal mieren de eigen mierhoop verdedigen
+		updateHillDefenders();
     	
     	if (forceStrategy)
     	{
@@ -73,28 +63,42 @@ public class MyBot extends Bot
      */
     private void updateMyStrategy()
     {
-    	forceStrategy = false;
     	myStrategy = Strategy.DEFAULT;
+    	forceStrategy = false;
     	
-		if (enemyStrategy == Strategy.DEFENSIVE)
+    	if (enemyStrategy == Strategy.DEFENSIVE)
 		{
-			// Versterk eigen mierleger zolang er nog voedsel te vinden is
 			// Als leger niet meer uitgebreid kan worden, laat dan alle mieren aanvallen
 			if (gameState.getFoodTiles().size() == 0 && gameState.getUnseenTiles().size() == 0)
 			{
+				// Forceer nieuwe strategie als we nog niet aan het aanvallen waren
 				if (myStrategy != Strategy.ALL_OFFENSIVE)
 					forceStrategy = true;
 				
 				myStrategy = Strategy.ALL_OFFENSIVE;
 			}
 		}
-		
-		if (enemyStrategy == Strategy.OFFENSIVE)
+    	
+    	if (enemyStrategy == Strategy.OFFENSIVE)
 		{
-			if (myStrategy != Strategy.ALL_DEFENSIVE)
-				forceStrategy = true;
-			
-			myStrategy = Strategy.ALL_DEFENSIVE;
+    		// Als leger niet meer uitgebreid kan worden, laat dan alle mieren verdedigen
+			if (gameState.getFoodTiles().size() == 0 && gameState.getUnseenTiles().size() == 0)
+			{
+				// Forceer nieuwe strategie als we nog niet aan het verdedigen waren
+				if (myStrategy != Strategy.ALL_DEFENSIVE)
+					forceStrategy = true;
+				
+				myStrategy = Strategy.ALL_DEFENSIVE;
+			}
+			// Als leger wel uitgebreid kan worden, laat dan een deel van de mieren verdedigen
+			else
+			{
+				// Forceer nieuwe strategie als we nog niet aan het verdedigen waren
+				if (myStrategy != Strategy.DEFENSIVE)
+					forceStrategy = true;
+				
+				myStrategy = Strategy.DEFENSIVE;
+			}
 		}
     }
     
@@ -105,9 +109,10 @@ public class MyBot extends Bot
     {
     	if (enemyStrategy == Strategy.DEFAULT)
     	{
-    		Tile myHill = gameState.getMyHill();
-    		Tile enemyHill = gameState.getEnemyHill();
-    		
+	    	// Vraag eigen en vijandige hill op
+			Tile myHill = gameState.getMyHill();
+			Tile enemyHill = gameState.getEnemyHill();
+			
 	    	if (gameState.getInfluenceValue(enemyHill) >= 20 &&		// Veel gevaar bij vijandige mierhoop
 	    		gameState.getInfluenceValue(myHill) < 5)			// Weinig gevaar bij eigen mierhoop
 			{
@@ -115,8 +120,7 @@ public class MyBot extends Bot
 				enemyStrategy = Strategy.DEFENSIVE;
 			}
 	    	
-	    	if (gameState.getInfluenceValue(myHill) >= 5 ||							// Gevaar bij eigen mierhoop
-	    	   (availableAnts.size() > 2 && gameState.getHillDefender() == null))	// Eigen mierhoop defender is dood	
+	    	if (gameState.getInfluenceValue(myHill) >= 5)			// Gevaar bij eigen mierhoop	
 			{
 				// Vijand speelt offensive
 				enemyStrategy = Strategy.OFFENSIVE;
@@ -127,30 +131,30 @@ public class MyBot extends Bot
     /**
      * Functie die de hill defender update
      */
-    private void updateHillDefender()
+    private void updateHillDefenders()
     {
-    	// Vraag de huidige hill defender op
-    	Tile currentDefender = gameState.getHillDefender();
-    	
-    	// Vraag de eigen hill op
-    	Tile myHill = gameState.getMyHill();
-    	
-    	// Bepaal nieuwe hill defender als er geen een is
-    	if (myHill != null && currentDefender == null && availableAnts.contains(myHill))
+    	if (gameState.getHillDefenders().size() < 3 && availableAnts.size() > 3)
     	{
-    		// Zet nieuwe hill defender naast een van de kanten van de hill
-    		for (Aim direction : Aim.values())
-    		{
-    			Tile defendLoc = gameState.getTile(myHill, direction);
-    			
-    			if (!gameState.isWater(defendLoc) && !gameState.isReserved(defendLoc));
-    			{
-    				doMoveDirection(myHill, direction);
-    				gameState.setHillDefender(defendLoc);
-    				availableAnts.remove(myHill);
-    				break;
-    			}
-    		}
+	    	// Vraag de eigen hill op
+	    	Tile myHill = gameState.getMyHill();
+	    	
+	    	// Bepaal nieuwe hill defender als er een mier beschikbaar is
+	    	if (myHill != null && availableAnts.contains(myHill))
+	    	{
+	    		// Zet nieuwe hill defender naast een van de kanten van de hill
+	    		for (Aim direction : Aim.values())
+	    		{
+	    			Tile defendLoc = gameState.getTile(myHill, direction);
+	    			
+	    			if (!gameState.isWater(defendLoc) && !gameState.isReserved(defendLoc))
+	    			{
+	    				doMoveDirection(myHill, direction);
+	    				gameState.setHillDefender(defendLoc);
+	    				availableAnts.remove(myHill);
+	    				break;
+	    			}
+	    		}
+	    	}
     	}
     }
     
