@@ -23,7 +23,7 @@ public class RouteFinder {
      * @return lijst van alle korste routes tussen start- en eindlocaties gesorteerd op lengte van de routes
      */
 	public static List<Route> findRoutes(GameState gameState, Target target, Set<Tile> startLocs, Set<Tile> targetLocs)
-	{
+	{		
 		// Lijst van gevonden routes
         List<Route> routes = new ArrayList<Route>();
         
@@ -109,6 +109,12 @@ public class RouteFinder {
 	{
 		if (!startLoc.equals(targetLoc))
 		{
+			int safety = 0;
+			
+			// Bepaal veiligheid van de route
+			if (target != Target.MY_HILL && target != Target.ENEMY_HILL)
+				safety = PATH_SAFETY;
+			
 			// Bepaal parent en scores voor start locatie
 			startLoc.parent = null;
 			startLoc.g_score = 0;
@@ -153,7 +159,7 @@ public class RouteFinder {
 				    	continue;
 				    
 				    // Bepaal nieuwe g score waarbij we rekening houden met de influence
-				    int g_score = x.g_score + 1 + (gameState.getInfluenceValue(y) * PATH_SAFETY);
+				    int g_score = x.g_score + 1 + (gameState.getInfluenceValue(y) * safety);
 				    
 				    // Bepaal parent en scores voor buur en voeg hem toe aan queue als hij
 				    // nog niet in de queue zit of als nieuwe g score beter is dan zijn bestaande

@@ -25,21 +25,18 @@ public class MyBot extends Bot
     @Override
     public void doTurn()
     {
+    	Strategy strategy = myStrategy;
+    	
     	/** - Update data - */
     	
         // Update game state
     	availableAnts = gameState.update(getAnts());
     	
-    	// Update de vijandige strategy
+    	// Update de vijandige strategie
     	updateEnemyStrategy();
-    	
-    	Strategy strategy = myStrategy;
     	
     	// Update de eigen strategie
     	updateMyStrategy();
-    	
-    	if (myStrategy != strategy)
-    		System.out.println("Enemy Strategy: " + enemyStrategy.name());
     	
         /** - Geef alle mieren orders - */
     	
@@ -63,6 +60,12 @@ public class MyBot extends Bot
     	
 	    // Deblokkeer eigen heuvels
 	    unblockHills();
+	    
+	    /** - System outs - */
+	    
+	    // Vijandige strategie detectie
+    	if (myStrategy != strategy)
+    		System.out.println("Enemy Strategy: " + enemyStrategy.name());
     }
     
     /**
@@ -70,7 +73,6 @@ public class MyBot extends Bot
      */
     private void updateMyStrategy()
     {
-    	myStrategy = Strategy.DEFAULT;
     	forceStrategy = false;
     	
     	if (enemyStrategy == Strategy.DEFENSIVE || enemyStrategy == Strategy.DEFAULT)
