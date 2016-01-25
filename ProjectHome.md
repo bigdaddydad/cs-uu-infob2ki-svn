@@ -1,0 +1,1 @@
+Eclipse project consisting of practical assignments for the Artificial Intelligence course at the Utrecht University.
